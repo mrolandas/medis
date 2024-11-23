@@ -1,38 +1,402 @@
-.App {
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  width: 100%;
+}
+
+button {
+  padding: 8px 20px;
+  background-color: #fabe70;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #f48536;
+  box-shadow: 0 0 10px #d1a86e;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Add to App.css */
+.app-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px; /* space between components */
+  margin: 20px;
+  align-items: flex-start;
+}
+
+.left-panel {
+  flex: 1;
+  max-width: 600px;
+}
+
+.center-panel {
+  flex: 2;
+  max-width: 800px;
+}
+
+.right-panel {
+  flex: 1;
+  max-width: 600px;
+}
+
+.person-details {
+  margin: 10px auto;
+  padding: 0;
+  width: 500px;
+  /* border: #333 solid 1px;
+  border-radius: 4px; */
+  background-color: antiquewhite;
+}
+
+.person-details h2 {
+  padding: 10px;
+  margin: 0;
+  font-size: large;
   text-align: center;
+  background-color: #f5a23c;
+  color: #333;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.person-details ul {
+  list-style: none;
+  padding: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.person-details li {
+  padding: 10px;
+  margin: 0px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.person-details label,
+.person-details input,
+.person-details input[type="date"] {
+  font-family: Arial, sans-serif;
+}
+
+.person-details label {
+  font-weight: bold;
+  width: 120px;
+}
+
+.person-details input {
+  padding: 8px;
+  margin: 0 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.person-details input[type="date"] {
+  padding: 8px;
+  margin: 0 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.person-details span {
+  font-size: smaller;
+  color: #666;
+  padding: 10px;
+  margin: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.person-control {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  margin: 0 10px;
+  border-top: #ccc solid 1px;
+}
+
+.right-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.left-controls {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.spouse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  width: calc(80% - 130px);
+  flex: 1;
+  min-width: 0;
+}
+
+.person-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+
+  flex: 1;
+  min-width: 0;
+}
+
+.person-reference button {
+  margin: 2.5px;
+  background-color: #faf7f1;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.person-reference button:hover {
+  background-color: #fdfdfd;
+  box-shadow: none;
+  transition: none;
+}
+
+.person-control button {
+  margin: 0 0px 0 5px;
+  justify-content: flex-start;
+  background-color: #fabe70;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.person-control button:hover {
+  background-color: #fbd98f;
+}
+
+.person-control button:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.person-control .delete-person-button {
+  background-color: #f44636;
+  color: #fff;
+  justify-content: flex-start;
+}
+.person-control .delete-person-button:hover {
+  background-color: #f44636;
+}
+.person-control .edit-person-button {
+  background-color: #f48536;
+  color: #fff;
+  justify-content: flex-start;
+}
+.person-control .edit-person-button:hover {
+  background-color: #f48536;
+}
+
+/* Add to App.css */
+.person-control .edit-person-button.editing {
+  background-color: #36f446; /* green */
+  color: #fff;
+}
+
+.person-control .delete-person-button.cancel {
+  background-color: #e0e0e0; /* gray */
+  color: #333;
+}
+
+.person-control .delete-person-button.confirm {
+  background-color: #f44636; /* red */
+  color: #fff;
+}
+
+.cancel-button {
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.elders {
+  display: flex;
+  justify-content: flex-end; /* Align towards center */
+  gap: 20px;
+  padding: 10px;
+}
+
+.descendants {
+  display: flex;
+  justify-content: flex-start; /* Align towards center */
+  gap: 20px;
+  padding: 10px;
+}
+
+.parents,
+.grandparents,
+.children,
+.grandchildren {
+  margin: 10px auto;
+  padding: 0;
+  width: 250px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+
+  background-color: none;
+}
+
+/* Shared heading styles */
+.parents h3,
+.grandparents h3,
+.children h3,
+.grandchildren h3 {
+  padding: 5px;
+  margin: 0;
+  font-size: medium;
+  text-align: center;
+  color: #333;
+}
+
+/* Shared person reference container styles */
+.parents .person-reference,
+.grandparents .person-reference,
+.children .person-reference,
+.grandchildren .person-reference {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 10px;
+}
+
+/* Shared button styles */
+.parents .person-reference button,
+.grandparents .person-reference button,
+.children .person-reference button,
+.grandchildren .person-reference button {
+  width: 90%;
+  margin: 2px 0;
+  padding: 8px 20px;
+  text-align: center;
+  background-color: #faf7f1;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
 }
 
-.App-link {
-  color: #61dafb;
+/* Shared button hover styles */
+.parents .person-reference button:hover,
+.grandparents .person-reference button:hover,
+.children .person-reference button:hover,
+.grandchildren .person-reference button:hover {
+  background-color: #fdfdfd;
+  box-shadow: none;
+  transition: none;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.nav {
+  margin: 10px auto;
+  padding: 0;
+  width: 600px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  color: #333;
+  border-radius: 4px;
+}
+
+.search-field {
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.nav input {
+  padding: 8px;
+  margin: 0 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav button {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 20px;
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.nav button:hover {
+  background-color: #f48536;
+  color: #fff;
+  box-shadow: 0 0 10px #ca6f2d;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-results {
+  margin: 10px auto;
+  padding: 0;
+  width: 600px;
+  display: block;
+  background-color: #fff;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-results li {
+  padding: 10px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ccc;
+}
+
+.search-results li:hover {
+  background-color: #f4f4f4;
+  cursor: pointer;
+}
+
+.clear-results {
+  margin-left: auto;
+}
+
+.hidden {
+  display: none;
 }
