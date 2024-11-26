@@ -43,7 +43,7 @@ button:disabled {
 
 .center-panel {
   flex: 2;
-  max-width: 800px;
+  max-width: 450px;
 }
 
 .right-panel {
@@ -54,7 +54,7 @@ button:disabled {
 .person-details {
   margin: 10px auto;
   padding: 0;
-  width: 500px;
+  width: 450px;
   /* border: #333 solid 1px;
   border-radius: 4px; */
   background-color: antiquewhite;
@@ -87,6 +87,11 @@ button:disabled {
 .person-details input,
 .person-details input[type="date"] {
   font-family: Arial, sans-serif;
+}
+.person-details input[readonly] {
+  background-color: #f4f4f4;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .person-details label {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function PersonDetails({
   selectedPerson,
@@ -9,10 +9,10 @@ export default function PersonDetails({
   const [deletePersonEnabled, setDeletePersonEnabled] = useState(false);
   const [editPersonEnabled, setEditPersonEnabled] = useState(false);
 
-  useEffect(() => {
+  function resetPersonView() {
     setDeletePersonEnabled(false);
     setEditPersonEnabled(false);
-  }, [selectedPerson]);
+  }
 
   return selectedPerson.id === null || selectedPerson === tree[0] ? null : (
     <>
@@ -28,26 +28,29 @@ export default function PersonDetails({
               type="text"
               value={selectedPerson.firstname}
               onChange={(e) => {
-                const updatedPerson = {
-                  ...selectedPerson,
-                  firstname: e.target.value,
-                };
-                onTreeUpdate(updatedPerson);
-                onSelectedPerson(updatedPerson);
+                if (editPersonEnabled) {
+                  const updatedPerson = {
+                    ...selectedPerson,
+                    firstname: e.target.value,
+                  };
+                  onTreeUpdate(updatedPerson);
+                }
               }}
+              readOnly={!editPersonEnabled}
             />
             <input
               type="text"
               value={selectedPerson.lastname}
               onChange={(e) => {
-                const updatedPerson = {
-                  ...selectedPerson,
-                  lastname: e.target.value,
-                };
-
-                onTreeUpdate(updatedPerson);
-                onSelectedPerson(updatedPerson);
+                if (editPersonEnabled) {
+                  const updatedPerson = {
+                    ...selectedPerson,
+                    lastname: e.target.value,
+                  };
+                  onTreeUpdate(updatedPerson);
+                }
               }}
+              readOnly={!editPersonEnabled}
             />
           </li>
           <li>
@@ -59,14 +62,15 @@ export default function PersonDetails({
                 type="date"
                 value={selectedPerson.birth}
                 onChange={(e) => {
-                  const updatedPerson = {
-                    ...selectedPerson,
-                    birth: e.target.value,
-                  };
-                  onTreeUpdate(updatedPerson);
-
-                  onSelectedPerson(updatedPerson);
+                  if (editPersonEnabled) {
+                    const updatedPerson = {
+                      ...selectedPerson,
+                      birth: e.target.value,
+                    };
+                    onTreeUpdate(updatedPerson);
+                  }
                 }}
+                readOnly={!editPersonEnabled}
               />
             )}
             {!editPersonEnabled && selectedPerson.death === "" ? (
@@ -76,14 +80,15 @@ export default function PersonDetails({
                 type="date"
                 value={selectedPerson.death}
                 onChange={(e) => {
-                  const updatedPerson = {
-                    ...selectedPerson,
-                    death: e.target.value,
-                  };
-                  onTreeUpdate(updatedPerson);
-
-                  onSelectedPerson(updatedPerson);
+                  if (editPersonEnabled) {
+                    const updatedPerson = {
+                      ...selectedPerson,
+                      death: e.target.value,
+                    };
+                    onTreeUpdate(updatedPerson);
+                  }
                 }}
+                readOnly={!editPersonEnabled}
               />
             )}
           </li>
@@ -125,6 +130,7 @@ export default function PersonDetails({
                 className="delete-person-button confirm"
                 onClick={() => {
                   onTreeUpdate(null);
+                  resetPersonView();
                 }}
               >
                 Confirm Delete

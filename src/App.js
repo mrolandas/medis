@@ -12,39 +12,6 @@ export default function App() {
   const [tree, setTree] = useState(theFam);
   const [selectedPerson, setSelectedPerson] = useState(tree[2]);
 
-  function handleSelectedPerson(person) {
-    !person ? setSelectedPerson(tree[0]) : setSelectedPerson(person);
-  }
-
-  function handleTreeUpdate(updatedPerson) {
-    if (!updatedPerson) {
-      // Handle deletion case
-      setTree((oldTree) => {
-        const newTree = oldTree.filter(
-          (person) => person.id !== selectedPerson.id
-        );
-        theFam = newTree; // Keep theFam in sync
-        setSelectedPerson(tree[0]); // Reset selection to first person
-        return newTree;
-      });
-    } else {
-      // Handle normal update case
-      setTree((oldTree) => {
-        const newTree = oldTree.map((person) =>
-          person.id === updatedPerson.id ? updatedPerson : person
-        );
-        theFam = newTree;
-        return newTree;
-      });
-    }
-  }
-
-  function childrenIds(somePersonId) {
-    return tree
-      .filter((person) => person.parents.includes(somePersonId))
-      .map((person) => person.id);
-  }
-
   return (
     <div className="App">
       <Search
@@ -83,4 +50,38 @@ export default function App() {
       </div>
     </div>
   );
+
+  function handleSelectedPerson(person) {
+    !person ? setSelectedPerson(tree[0]) : setSelectedPerson(person);
+  }
+
+  function handleTreeUpdate(updatedPerson) {
+    if (!updatedPerson) {
+      // Handle deletion case
+      setTree((oldTree) => {
+        const newTree = oldTree.filter(
+          (person) => person.id !== selectedPerson.id
+        );
+        theFam = newTree;
+        setSelectedPerson(tree[0]);
+        return newTree;
+      });
+    } else {
+      // Handle normal update case
+      setTree((oldTree) => {
+        const newTree = oldTree.map((person) =>
+          person.id === updatedPerson.id ? updatedPerson : person
+        );
+        theFam = newTree;
+        setSelectedPerson(updatedPerson);
+        return newTree;
+      });
+    }
+  }
+
+  function childrenIds(somePersonId) {
+    return tree
+      .filter((person) => person.parents.includes(somePersonId))
+      .map((person) => person.id);
+  }
 }
