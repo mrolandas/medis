@@ -7,10 +7,10 @@ export default function Search({ selectedPerson, onSelectedPerson, tree }) {
     const query = event.target.value.toLowerCase();
     setSearchQuery(query);
     const results = Object.values(tree).filter((person) => {
-      return (
-        person.firstname.toLowerCase().includes(query) ||
-        person.lastname.toLowerCase().includes(query)
-      );
+      return person.deleted === true
+        ? null
+        : person.firstname.toLowerCase().includes(query) ||
+            person.lastname.toLowerCase().includes(query);
     });
     setSearchResults(results);
   }
@@ -27,7 +27,9 @@ export default function Search({ selectedPerson, onSelectedPerson, tree }) {
         />
         {selectedPerson.id !== 0 && (
           <div>
-            <button onClick={() => onSelectedPerson()}>Clear Results</button>
+            <button value={selectedPerson} onClick={() => onSelectedPerson()}>
+              Start Over
+            </button>
           </div>
         )}
       </nav>

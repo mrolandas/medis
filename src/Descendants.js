@@ -4,6 +4,7 @@ export default function Descendants({
   onSelectedPerson,
   tree,
   childrenIds,
+  onLifeYearRange,
 }) {
   return selectedPerson.id === 0 || selectedPerson.id === null ? null : (
     <div className="descendants">
@@ -12,22 +13,29 @@ export default function Descendants({
         onSelectedPerson={onSelectedPerson}
         tree={tree}
         childrenIds={childrenIds}
+        onLifeYearRange={onLifeYearRange}
       />
       <GrandChildren
         selectedPerson={selectedPerson}
         onSelectedPerson={onSelectedPerson}
         tree={tree}
         childrenIds={childrenIds}
+        onLifeYearRange={onLifeYearRange}
       />
     </div>
   );
 }
 
-function Children({ selectedPerson, onSelectedPerson, tree, childrenIds }) {
+function Children({
+  selectedPerson,
+  onSelectedPerson,
+  tree,
+  childrenIds,
+  onLifeYearRange,
+}) {
   const childrenArray = childrenIds(selectedPerson.id);
 
-  if (childrenArray.length === 0) return null;
-  return (
+  return childrenArray.length === 0 ? null : (
     <div className="children">
       <h3>{selectedPerson.firstname}'s Children</h3>
       <div className="person-reference">
@@ -35,9 +43,13 @@ function Children({ selectedPerson, onSelectedPerson, tree, childrenIds }) {
           const child = tree[childId];
 
           return (
-            <button key={childId} onClick={() => onSelectedPerson(child)}>
-              {`${child.firstname} ${child.lastname}`}
-            </button>
+            <label key={childId}>
+              {onLifeYearRange(child)}
+
+              <button key={childId} onClick={() => onSelectedPerson(child)}>
+                {`  ${child.firstname} ${child.lastname}                `}
+              </button>
+            </label>
           );
         })}
       </div>
@@ -50,6 +62,7 @@ function GrandChildren({
   tree,
   onSelectedPerson,
   childrenIds,
+  onLifeYearRange,
 }) {
   const grandChildrenArray = (
     Array.isArray(childrenIds(selectedPerson.id))
@@ -57,7 +70,7 @@ function GrandChildren({
       : []
   ).reduce((acc, childId) => {
     const grandChildrenIds = Array.isArray(childrenIds(childId))
-      ? childrenIds(childId)
+      ? childrenIds(childId).filter((id) => tree[id].deleted !== true)
       : [];
     return [...acc, ...grandChildrenIds];
   }, []);
@@ -70,12 +83,15 @@ function GrandChildren({
           const grandChild = tree[grandChildId];
 
           return (
-            <button
-              key={grandChildId}
-              onClick={() => onSelectedPerson(grandChild)}
-            >
-              {` ${grandChild.firstname} ${grandChild.lastname}`}
-            </button>
+            <label key={grandChildId}>
+              {onLifeYearRange(grandChild)}
+              <button
+                key={grandChildId}
+                onClick={() => onSelectedPerson(grandChild)}
+              >
+                {` ${grandChild.firstname} ${grandChild.lastname}`}
+              </button>
+            </label>
           );
         })}
       </div>

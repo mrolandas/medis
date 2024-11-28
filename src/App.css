@@ -1,9 +1,10 @@
 body {
-  font-family: Arial, sans-serif;
+  width: 100%;
   margin: 0;
   padding: 0;
+  font-family: Arial, sans-serif;
+  font-size: 1em;
   background-color: #f4f4f4;
-  width: 100%;
 }
 
 button {
@@ -13,12 +14,13 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 1em;
 }
 
 button:hover {
   background-color: #f48536;
-  box-shadow: 0 0 10px #d1a86e;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: #d6d6d6 0 0 5px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 button:disabled {
@@ -27,37 +29,90 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Add to App.css */
-.app-container {
-  display: flex;
-  justify-content: center;
-  gap: 20px; /* space between components */
-  margin: 20px;
-  align-items: flex-start;
+input[type="text"],
+input[type="email"],
+input[type="date"],
+input[type="password"] {
+  font-size: 0.9em;
 }
 
-.left-panel {
+.app-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 20px;
+  align-items: center;
+}
+
+.top-containers {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+.middle-containers {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+.bottom-containers {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.panel {
   flex: 1;
-  max-width: 600px;
 }
 
 .center-panel {
+  flex: 1.2;
+}
+
+.app-container .center-panel {
   flex: 2;
   max-width: 450px;
 }
 
-.right-panel {
+.app-container .left-panel {
   flex: 1;
   max-width: 600px;
+}
+
+.app-container .right-panel {
+  flex: 1;
+  max-width: 600px;
+}
+
+.person-edit-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.person-edit-container button {
+  margin: 10px 0 0px 0;
+  width: 90%;
+}
+
+.edit-person-details {
+  margin: 0;
+  padding: 0;
+  width: 90%;
+  background-color: #fde8cb;
 }
 
 .person-details {
   margin: 10px auto;
   padding: 0;
   width: 450px;
-  /* border: #333 solid 1px;
-  border-radius: 4px; */
-  background-color: antiquewhite;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #ccc;
 }
 
 .person-details h2 {
@@ -65,7 +120,7 @@ button:disabled {
   margin: 0;
   font-size: large;
   text-align: center;
-  background-color: #f5a23c;
+  background-color: white;
   color: #333;
 }
 
@@ -128,12 +183,45 @@ button:disabled {
   flex: 1;
   min-width: 0;
 }
-.person-control {
+
+.relationship-form {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   padding: 10px;
-  margin: 0 10px;
-  border-top: #ccc solid 1px;
+  margin: 0px 10px;
+  gap: 10px;
+}
+
+.relationship-form label {
+  min-width: 80px;
+}
+
+.relationship-form select {
+  flex: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.relationship-form button {
+  width: auto;
+  min-width: 80px;
+}
+
+.edit-relationships {
+  margin: 0;
+  padding: 0;
+  width: 90%;
+  background-color: #fde8cb;
+}
+
+.edit-relationships h3 {
+  padding: 5px;
+  margin: 0;
+  font-size: small;
+  text-align: center;
+  color: #333;
 }
 
 .right-controls {
@@ -145,15 +233,6 @@ button:disabled {
 .left-controls {
   display: flex;
   justify-content: flex-start;
-}
-
-.spouse {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  width: calc(80% - 130px);
-  flex: 1;
-  min-width: 0;
 }
 
 .person-reference {
@@ -174,8 +253,14 @@ button:disabled {
 
 .person-reference button:hover {
   background-color: #fdfdfd;
-  box-shadow: none;
-  transition: none;
+}
+
+.person-control {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  margin: 10px;
+  border-top: #ccc solid 1px;
 }
 
 .person-control button {
@@ -199,41 +284,40 @@ button:disabled {
 }
 
 .person-control .delete-person-button {
-  background-color: #f44636;
+  background-color: #f45c36;
   color: #fff;
   justify-content: flex-start;
 }
 .person-control .delete-person-button:hover {
-  background-color: #f44636;
-}
-.person-control .edit-person-button {
-  background-color: #f48536;
-  color: #fff;
-  justify-content: flex-start;
-}
-.person-control .edit-person-button:hover {
-  background-color: #f48536;
+  background-color: #e53003;
 }
 
-/* Add to App.css */
-.person-control .edit-person-button.editing {
-  background-color: #36f446; /* green */
+.person-control .edit-person-button.confirm-button {
+  background-color: #4e9c00;
   color: #fff;
 }
 
 .person-control .delete-person-button.cancel {
-  background-color: #e0e0e0; /* gray */
+  background-color: #e0e0e0;
   color: #333;
 }
 
 .person-control .delete-person-button.confirm {
-  background-color: #f44636; /* red */
+  background-color: #f45c36;
   color: #fff;
 }
 
 .cancel-button {
   background-color: #e0e0e0;
   color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-button button {
+  background-color: #36f446;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -260,9 +344,9 @@ button:disabled {
   margin: 10px auto;
   padding: 0;
   width: 250px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
-
   background-color: none;
 }
 
@@ -310,14 +394,76 @@ button:disabled {
   align-items: center;
 }
 
+/* styling the span for a label (i.e. lifespan years)*/
+.parents .person-reference label span,
+.grandparents .person-reference label span,
+.children .person-reference label span,
+.grandchildren .person-reference label span {
+  color: #9c9999;
+
+  display: flex;
+  justify-content: flex-start;
+  margin: 0 0 0 5px;
+  font-size: 0.8em;
+}
+
 /* Shared button hover styles */
 .parents .person-reference button:hover,
 .grandparents .person-reference button:hover,
 .children .person-reference button:hover,
 .grandchildren .person-reference button:hover {
   background-color: #fdfdfd;
-  box-shadow: none;
-  transition: none;
+}
+
+.spouse,
+.siblings {
+  margin: 10px auto;
+  padding: 0;
+  width: 200px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background-color: none;
+}
+
+.spouse h3,
+.siblings h3 {
+  padding: 5px;
+  margin: 10px 0 0 0;
+  font-size: medium;
+  text-align: center;
+  color: #333;
+}
+
+.spouse .person-reference,
+.siblings .person-reference {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 10px;
+}
+
+.spouse .person-reference button,
+.siblings .person-reference button {
+  width: 90%;
+  margin: 2px 0;
+  padding: 8px 20px;
+  text-align: center;
+  background-color: #faf7f1;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spouse .person-reference button:hover,
+.siblings .person-reference button:hover {
+  background-color: #fdfdfd;
 }
 
 .nav {
@@ -358,13 +504,13 @@ button:disabled {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  box-shadow: #d6d6d6 0 0 5px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .nav button:hover {
   background-color: #f48536;
   color: #fff;
-  box-shadow: 0 0 10px #ca6f2d;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .search-results {
