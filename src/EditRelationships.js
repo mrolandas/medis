@@ -80,8 +80,8 @@ export default function EditRelationships({
     <>
       <button onClick={() => handleEditRelationships()}>
         {EditRelationships
-          ? "Finished Editing Relationships"
-          : "Edit Relationships"}
+          ? "Finished Editing Relationships ▲"
+          : "Edit Relationships ▼"}
       </button>
       <div className="edit-relationships">
         <div className={EditRelationships ? "" : "hidden"}>

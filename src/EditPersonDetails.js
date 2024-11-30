@@ -13,9 +13,10 @@ export default function EditPersonDetails({
     <>
       <button onClick={() => handleEditPersonDetails()}>
         {EditPersonDetails
-          ? "Finished Editing Person Details"
-          : "Edit Person Details"}
+          ? "Finished Editing Person Details ▲"
+          : "Edit Person Details ▼"}
       </button>
+
       <div className="edit-person-details">
         <div className={EditPersonDetails ? "" : "hidden"}>
           <ul>

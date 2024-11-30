@@ -9,6 +9,7 @@ export default function PersonDetails({
   editPersonEnabled,
   handleSetEditPersonEnabled,
   onLifeYearRange,
+  OnGenerateImage,
 }) {
   const [deletePersonEnabled, setDeletePersonEnabled] = useState(false);
 
@@ -20,10 +21,20 @@ export default function PersonDetails({
   return selectedPerson.id === null || selectedPerson === tree[0] ? null : (
     <>
       <div className="person-details">
-        <h2>
-          {selectedPerson.firstname} {selectedPerson.lastname}
-          {onLifeYearRange(selectedPerson)}
-        </h2>
+        <div class="person-header-container">
+          <div>
+            <h2>
+              {selectedPerson.firstname} {selectedPerson.lastname}
+            </h2>
+            <span>{onLifeYearRange(selectedPerson)}</span>
+          </div>
+          <img
+            src={OnGenerateImage(selectedPerson.id)}
+            alt={`${selectedPerson.firstname} ${selectedPerson.lastname} portrait`}
+            className="person-portrait"
+          />
+        </div>
+
         <div className="person-edit-container">
           <EditPersonDetails
             selectedPerson={selectedPerson}

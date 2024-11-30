@@ -10,7 +10,7 @@ import Siblings from "./Siblings";
 
 export default function App() {
   let theFam = Object.values(familyTree);
-
+  const [personImages, setPersonImages] = useState({});
   const [tree, setTree] = useState(theFam);
   const [selectedPerson, setSelectedPerson] = useState(tree[2]);
   const [editPersonEnabled, setEditPersonEnabled] = useState(false);
@@ -128,6 +128,21 @@ export default function App() {
     };
   }
   console.log(relationshipArray(selectedPerson));
+
+  function generateImage(personId) {
+    if (personImages[personId]) {
+      return personImages[personId];
+    } else {
+      const randomNum = Math.floor(Math.random() * 1000000);
+      const imageUrl = `https://i.pravatar.cc/50?u=${personId}${randomNum}`;
+      setPersonImages((prevImages) => ({
+        ...prevImages,
+        [personId]: imageUrl,
+      }));
+      return imageUrl;
+    }
+  }
+
   return (
     <div className="App">
       <Search
@@ -178,6 +193,7 @@ export default function App() {
               editPersonEnabled={editPersonEnabled}
               handleSetEditPersonEnabled={onSetEditPersonEnabled}
               onLifeYearRange={lifeYearRange}
+              OnGenerateImage={generateImage}
             />
           </div>
 
