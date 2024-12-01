@@ -1,8 +1,8 @@
 body {
+  font-family: Arial, sans-serif;
   width: 100%;
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
   font-size: 1em;
   background-color: #f4f4f4;
 }
@@ -44,10 +44,47 @@ select {
   border-radius: 4px;
 }
 
+/* App container */
+.App-header {
+  height: 50px;
+  background-color: #333;
+  color: white;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .App-header {
+    z-index: 20; /* Keep header above everything */
+  }
+}
+.App-header h1 {
+  position: absolute;
+  left: 20px;
+  margin: 0;
+  padding: 0;
+  font-size: 2em;
+}
+.App-header h1:hover {
+  cursor: pointer;
+}
+
+.App-header .add-person-button {
+  background-color: #fabe70;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 8px 20px;
+  font-size: 1em;
+  position: absolute;
+  right: 20px;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  /* gap: 20px; */
   margin: 20px;
   align-items: center;
 }
@@ -57,18 +94,28 @@ select {
   justify-content: center;
   gap: 20px;
   width: 100%;
+  position: relative;
+  z-index: 5; /* Below overlay */
 }
 .middle-containers {
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   gap: 20px;
   width: 100%;
+  position: relative;
+  z-index: 5; /* Below overlay */
 }
 .bottom-containers {
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   gap: 20px;
   width: 100%;
+  /* position: relative; */
+  z-index: 5; /* Below overlay */
 }
 
 .panel {
@@ -126,38 +173,34 @@ select {
   flex-wrap: wrap;
 }
 
-.person-details label,
+.person-details label {
+  padding: 0;
+  margin: 0;
+  width: 120px;
+  min-height: 2.3em;
+  display: flex;
+  align-items: center;
+}
+
 .person-details input,
 .person-details input[type="date"] {
   font-family: Arial, sans-serif;
+  padding: 8px;
+  margin: 0 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
 }
+
 .person-details input[readonly] {
   background-color: #f4f4f4;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
-.person-details label {
-  font-weight: normal;
-  width: 120px;
-}
-
-.person-details input {
-  padding: 8px;
-  margin: 0 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.checkboxDiv {
+  padding: 0px;
+  margin: 0 2px;
   flex: 1;
-  min-width: 0;
-}
-
-.person-details input[type="date"] {
-  padding: 8px;
-  margin: 0 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex: 1;
-  min-width: 0;
 }
 
 .person-details span {
@@ -172,28 +215,36 @@ select {
   min-width: 0;
 }
 .person-header-container {
-  width: 90%;
+  width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 10px;
   margin: 0;
+  padding: 20px 0px 0px 0px;
+}
+
+.person-header-container img {
+  width: 50px;
+  height: 50px;
+  border-radius: 20%;
 }
 
 .person-header-container div {
-  width: 100%;
+  min-height: 50px;
+  padding: 0px 0px 0px 15px;
+  width: 80%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: left;
 }
 
 .person-header-container h2 {
-  margin: 5px 0;
   padding: 0px;
   font-size: large;
   color: #333;
-  text-align: center;
+  text-align: left;
+  align-self: flex-start;
 }
 
 .person-header-container span {
@@ -201,25 +252,18 @@ select {
   padding: 0;
   font-size: small;
   color: #9c9999;
-  text-align: center;
-}
-
-.person-header-container img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
+  text-align: left;
 }
 
 .person-edit-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0;
-  padding: 0;
+  margin: 10px 0px 0px 0px;
+  padding: 0px;
   width: 100%;
 }
 .person-edit-container button {
-  margin: 10px 0 0px 0;
   width: 90%;
   background-color: #fde8cb;
 }
@@ -228,15 +272,16 @@ select {
 }
 
 .edit-person-details {
+  margin: 3px 0px 0px 0px;
   width: 90%;
   background-color: #fde8cb;
 }
+
 .relationship-form {
   display: flex;
   align-items: center;
   padding: 10px;
   margin: 0px 10px;
-  gap: 10px;
 }
 
 .relationship-form label {
@@ -256,12 +301,13 @@ select {
   background-color: #fabe70;
 }
 .relationship-form select {
+  margin: 0 5px;
   flex: 1;
   min-width: 0;
 }
 
 .edit-relationships {
-  margin: 0;
+  margin: 3px 0px 0px 0px;
   padding: 0;
   width: 90%;
   background-color: #fde8cb;
@@ -309,9 +355,8 @@ select {
 .person-control {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  margin: 10px;
-  border-top: #ccc solid 1px;
+  padding: 10px 0px 10px 0px;
+  margin: 0px 10px 0px 10px;
 }
 
 .person-control button {
@@ -391,7 +436,9 @@ select {
 .parents,
 .grandparents,
 .children,
-.grandchildren {
+.grandchildren,
+.siblings,
+.spouse {
   margin: 10px auto;
   padding: 0;
   width: 250px;
@@ -405,7 +452,9 @@ select {
 .parents h3,
 .grandparents h3,
 .children h3,
-.grandchildren h3 {
+.grandchildren h3,
+.siblings h3,
+.spouse h3 {
   padding: 5px;
   margin: 0;
   font-size: medium;
@@ -417,7 +466,9 @@ select {
 .parents .person-reference,
 .grandparents .person-reference,
 .children .person-reference,
-.grandchildren .person-reference {
+.grandchildren .person-reference,
+.siblings .person-reference,
+.spouse .person-reference {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -430,7 +481,9 @@ select {
 .parents .person-reference button,
 .grandparents .person-reference button,
 .children .person-reference button,
-.grandchildren .person-reference button {
+.grandchildren .person-reference button,
+.siblings .person-reference button,
+.spouse .person-reference button {
   width: 90%;
   margin: 2px 0;
   padding: 8px 20px;
@@ -449,7 +502,9 @@ select {
 .parents .person-reference label span,
 .grandparents .person-reference label span,
 .children .person-reference label span,
-.grandchildren .person-reference label span {
+.grandchildren .person-reference label span,
+.spouse .person-reference label span,
+.siblings .person-reference label span {
   color: #9c9999;
   display: flex;
   justify-content: flex-start;
@@ -461,79 +516,44 @@ select {
 .parents .person-reference button:hover,
 .grandparents .person-reference button:hover,
 .children .person-reference button:hover,
-.grandchildren .person-reference button:hover {
+.grandchildren .person-reference button:hover,
+.siblings .person-reference button:hover,
+.spouse .person-reference button:hover {
   background-color: #fdfdfd;
 }
 
-.spouse,
-.siblings {
-  margin: 10px auto;
-  padding: 0;
-  width: 200px;
-  max-width: 300px;
+.life-year-rage span {
+  color: #9c9999;
   display: flex;
-  flex-direction: column;
-  background-color: none;
+  justify-content: flex-start;
+  margin: 0 0 0 5px;
+  font-size: 0.8em;
 }
 
-.spouse h3,
-.siblings h3 {
-  padding: 5px;
-  margin: 10px 0 0 0;
-  font-size: medium;
-  text-align: center;
-  color: #333;
-}
-
-.spouse .person-reference,
-.siblings .person-reference {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 5px;
-  padding: 10px;
-}
-
-.spouse .person-reference button,
-.siblings .person-reference button {
-  width: 90%;
-  margin: 2px 0;
-  padding: 8px 20px;
-  text-align: center;
-  background-color: #faf7f1;
-  color: #333;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.spouse .person-reference button:hover,
-.siblings .person-reference button:hover {
-  background-color: #fdfdfd;
-}
-
-.nav {
+.search-container {
   margin: 10px auto;
   padding: 0;
   width: 600px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  color: #333;
-  border-radius: 4px;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
 }
 
 .search-field {
-  margin: 10px 0;
-  padding: 0;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
+  width: 100%;
+  padding: 8px;
+  margin: 0 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-field:focus {
+  outline: none;
+  border-color: #fabe70;
+  box-shadow: 0 0 2px #fabe70;
 }
 
 .nav input {
@@ -564,13 +584,21 @@ select {
 }
 
 .search-results {
+  color: #333;
   margin: 10px auto;
   padding: 0;
   width: 600px;
   display: block;
-  background-color: #fff;
   max-height: 400px;
   overflow-y: auto;
+  position: absolute;
+  background-color: white;
+  border: 2px solid #f9e8d2;
+  border-radius: 4px;
+  left: 0;
+  right: 0;
+  top: 50px;
+  z-index: 15; /* Keep search results above overlay */
 }
 
 .search-results ul {
@@ -586,11 +614,21 @@ select {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #fabe70;
 }
 
 .search-results li:hover {
-  background-color: #f4f4f4;
+  background-color: #fbd98f;
+  cursor: pointer;
+}
+
+.search-results li.selected {
+  background-color: #fabe70;
+  color: #333;
+}
+
+.search-results li:hover {
+  background-color: #fde8cb;
   cursor: pointer;
 }
 
@@ -600,4 +638,67 @@ select {
 
 .hidden {
   display: none;
+}
+
+.add-person-container {
+  width: 450px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.add-person-container form {
+  width: 100%;
+  max-width: 450px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #ccc;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.add-person-container h3 {
+  padding: 10px;
+  margin: 0;
+  font-size: large;
+  text-align: center;
+  background-color: white;
+  color: #333;
+}
+
+.add-person-container label {
+  font-size: 0.9em;
+  color: #333;
+}
+
+.add-person-container input {
+  font-family: Arial, sans-serif;
+  padding: 8px;
+  margin: 0 0 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.overlay {
+  position: fixed;
+  top: 70px; /* Below header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  cursor: pointer;
 }

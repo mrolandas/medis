@@ -35,7 +35,9 @@ function Children({
 }) {
   const childrenArray = childrenIds(selectedPerson.id);
 
-  return childrenArray.length === 0 ? null : (
+  return childrenArray.length === 0 ? (
+    <div className="children"></div>
+  ) : (
     <div className="children">
       <h3>{selectedPerson.firstname}'s Children</h3>
       <div className="person-reference">
@@ -75,7 +77,9 @@ function GrandChildren({
     return [...acc, ...grandChildrenIds];
   }, []);
 
-  return grandChildrenArray.length === 0 ? null : (
+  return grandChildrenArray.length === 0 ? (
+    <div className="grandchildren"></div>
+  ) : (
     <div className="grandchildren">
       <h3>{selectedPerson.firstname}'s Grandchildren</h3>
       <div className="person-reference">

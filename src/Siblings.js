@@ -3,6 +3,7 @@ export default function Siblings({
   onSelectedPerson,
   tree,
   childrenIds,
+  onLifeYearRange,
 }) {
   const siblings = [
     ...new Set(
@@ -19,10 +20,13 @@ export default function Siblings({
       <h3>{`${selectedPerson.firstname}'s Siblings`}</h3>
       <div className="person-reference">
         {siblings.map((sibling) => (
-          <button
-            key={sibling.id}
-            onClick={() => onSelectedPerson(sibling)}
-          >{`${sibling.firstname} ${sibling.lastname}`}</button>
+          <label key={sibling.id}>
+            {onLifeYearRange(sibling)}
+            <button
+              key={sibling.id}
+              onClick={() => onSelectedPerson(sibling)}
+            >{`${sibling.firstname} ${sibling.lastname}`}</button>
+          </label>
         ))}
       </div>
     </div>

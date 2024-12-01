@@ -7,6 +7,7 @@ import Elders from "./Elders";
 import Descendants from "./Descendants";
 import Spouse from "./Spouse";
 import Siblings from "./Siblings";
+import AddPerson from "./AddPerson";
 
 export default function App() {
   let theFam = Object.values(familyTree);
@@ -28,6 +29,16 @@ export default function App() {
   }
 
   function handleTreeUpdate(updatedPerson, updateType) {
+    if (updateType === "addPerson") {
+      setTree((prevTree) => {
+        const newTree = [...prevTree, updatedPerson];
+        theFam = newTree;
+        setSelectedPerson(updatedPerson);
+        return newTree;
+      });
+      return;
+    }
+
     setTree((oldTree) => {
       const newTree = oldTree.map((person) =>
         person.id === updatedPerson.id
@@ -37,9 +48,13 @@ export default function App() {
           : person
       );
       theFam = newTree;
+
       if (updateType === "delete" && updatedPerson.id === selectedPerson.id) {
         setSelectedPerson(newTree[0]);
       } else {
+        if (updateType === "deceasedChange") {
+          updatedPerson = { ...updatedPerson, death: "" };
+        }
         setSelectedPerson(newTree[updatedPerson.id]);
       }
       return newTree;
@@ -89,45 +104,52 @@ export default function App() {
           ? deathYear
             ? birthYear === deathYear
               ? birthYear
-              : `${birthYear} - ${deathYear}, age ${age} (deceased)`
-            : (person.deceased && `${birthYear} - unknown (deceased)`) ||
+              : `${birthYear} - ${deathYear}, age ${age} ${
+                  person.deceased && "(deceased)"
+                }`
+            : (person.deceased &&
+                `${birthYear} - unknown ${
+                  person.deceased ? "(deceased)" : ""
+                }`) ||
               (!person.deceased && `${birthYear} - present, age ${age}`)
           : deathYear
-          ? `unknown - ${deathYear} (deceased)`
+          ? `unknown - ${deathYear} ${person.deceased ? "(deceased)" : ""}`
           : !birthYear && !deathYear
-          ? (person.deceased && `dates unknown (deceased)`) ||
-            (!person.deceased && `dates unknown (alive)`)
+          ? (person.deceased &&
+              `dates unknown ${person.deceased ? "(deceased)" : ""}`) ||
+            (!person.deceased &&
+              `dates unknown ${!person.deceased ? "(alive)" : ""}`)
           : null}
       </span>
     );
   }
 
-  function relationshipArray(person) {
-    const fatherId =
-      tree.filter(
-        (person) =>
-          selectedPerson.parents.includes(person.id) && person.gender === "M"
-      )[0] || {};
-    const motherId =
-      tree.filter(
-        (person) =>
-          selectedPerson.parents.includes(person.id) && person.gender === "F"
-      )[0] || {};
-    const daughterIds = childrenIds(person.id)
-      .flatMap((id) => (tree[id].gender === "F" ? id : null))
-      .filter((id) => id !== null);
-    const sonIds = childrenIds(person.id)
-      .flatMap((id) => (tree[id].gender === "M" ? id : null))
-      .filter((id) => id !== null);
+  // function relationshipArray(person) {
+  //   const fatherId =
+  //     tree.filter(
+  //       (person) =>
+  //         selectedPerson.parents.includes(person.id) && person.gender === "M"
+  //     )[0] || {};
+  //   const motherId =
+  //     tree.filter(
+  //       (person) =>
+  //         selectedPerson.parents.includes(person.id) && person.gender === "F"
+  //     )[0] || {};
+  //   const daughterIds = childrenIds(person.id)
+  //     .flatMap((id) => (tree[id].gender === "F" ? id : null))
+  //     .filter((id) => id !== null);
+  //   const sonIds = childrenIds(person.id)
+  //     .flatMap((id) => (tree[id].gender === "M" ? id : null))
+  //     .filter((id) => id !== null);
 
-    return {
-      father: fatherId,
-      mother: motherId,
-      daughterIds: daughterIds,
-      sonIds: sonIds,
-    };
-  }
-  console.log(relationshipArray(selectedPerson));
+  //   return {
+  //     father: fatherId,
+  //     mother: motherId,
+  //     daughterIds: daughterIds,
+  //     sonIds: sonIds,
+  //   };
+  // }
+  // console.log(relationshipArray(selectedPerson));
 
   function generateImage(personId) {
     if (personImages[personId]) {
@@ -135,43 +157,48 @@ export default function App() {
     } else {
       const randomNum = Math.floor(Math.random() * 1000000);
       const imageUrl = `https://i.pravatar.cc/50?u=${personId}${randomNum}`;
-      setPersonImages((prevImages) => ({
-        ...prevImages,
-        [personId]: imageUrl,
-      }));
+      setTimeout(() => {
+        setPersonImages((prevImages) => {
+          const newImages = { ...prevImages, [personId]: imageUrl };
+          return newImages;
+        });
+      }, 0);
       return imageUrl;
     }
   }
 
   return (
     <div className="App">
-      <Search
-        selectedPerson={selectedPerson}
-        onSelectedPerson={handleSelectedPerson}
-        tree={tree}
-      />
+      <header className="App-header">
+        {/* {selectedPerson.id !== 0 && (
+          <div>
+            <button
+              value={selectedPerson}
+              onClick={() => handleSelectedPerson()}
+            >
+              🔃
+            </button>
+          </div>
+        )} */}
+        <h1 onClick={() => handleSelectedPerson()}>Family</h1>
+
+        <AddPerson
+          onSelectedPerson={handleSelectedPerson}
+          selectedPerson={selectedPerson}
+          tree={tree}
+          onTreeUpdate={handleTreeUpdate}
+          editPersonEnabled={editPersonEnabled}
+        />
+        <Search
+          selectedPerson={selectedPerson}
+          onSelectedPerson={handleSelectedPerson}
+          tree={tree}
+          lifeYearRange={lifeYearRange}
+        />
+      </header>
 
       <div className="app-container">
-        <div className="top-containers">
-          <div className="panel center-panel">
-            <Siblings
-              selectedPerson={selectedPerson}
-              onSelectedPerson={handleSelectedPerson}
-              tree={tree}
-              childrenIds={childrenIds}
-            />
-          </div>
-          <div className="panel center-panel">
-            <Spouse
-              selectedPerson={selectedPerson}
-              onSelectedPerson={handleSelectedPerson}
-              tree={tree}
-              spouse={tree[selectedPerson.spouse]}
-              editPersonEnabled={editPersonEnabled}
-              onLifeYearRange={lifeYearRange}
-            />
-          </div>
-        </div>
+        <div className="top-containers"></div>
 
         <div className="middle-containers">
           <div className="panel left-panel">
@@ -194,6 +221,7 @@ export default function App() {
               handleSetEditPersonEnabled={onSetEditPersonEnabled}
               onLifeYearRange={lifeYearRange}
               OnGenerateImage={generateImage}
+              personImages={personImages}
             />
           </div>
 
@@ -208,7 +236,27 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bottom-containers"></div>
+        <div className="bottom-containers">
+          <div className="panel center-panel">
+            <Siblings
+              selectedPerson={selectedPerson}
+              onSelectedPerson={handleSelectedPerson}
+              tree={tree}
+              childrenIds={childrenIds}
+              onLifeYearRange={lifeYearRange}
+            />
+          </div>
+          <div className="panel center-panel">
+            <Spouse
+              selectedPerson={selectedPerson}
+              onSelectedPerson={handleSelectedPerson}
+              tree={tree}
+              spouse={tree[selectedPerson.spouse]}
+              editPersonEnabled={editPersonEnabled}
+              onLifeYearRange={lifeYearRange}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

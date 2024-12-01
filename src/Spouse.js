@@ -2,7 +2,7 @@ export default function Spouse({
   selectedPerson,
   onSelectedPerson,
   spouse,
-  editPersonEnabled,
+  onLifeYearRange,
 }) {
   if (!spouse || spouse.deleted === true) {
     return null;
@@ -12,9 +12,12 @@ export default function Spouse({
     <div className="spouse">
       <h3>{`${[selectedPerson.firstname]}'s Spouse`}</h3>
       <div className="person-reference">
-        <button
-          onClick={() => onSelectedPerson(spouse)}
-        >{`${spouse.firstname} ${spouse.lastname}`}</button>
+        <label>
+          {onLifeYearRange(spouse)}
+          <button
+            onClick={() => onSelectedPerson(spouse)}
+          >{`${spouse.firstname} ${spouse.lastname}`}</button>
+        </label>
       </div>
     </div>
   );

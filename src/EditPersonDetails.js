@@ -52,7 +52,7 @@ export default function EditPersonDetails({
               />
             </li>
             <li>
-              <label>Birth</label>{" "}
+              <label>Birth Date</label>{" "}
               {!editPersonEnabled && selectedPerson.birth === "" ? (
                 <span className="birth-death"></span>
               ) : (
@@ -73,8 +73,27 @@ export default function EditPersonDetails({
               )}
             </li>
             <li>
-              <label>Death</label>{" "}
-              {!editPersonEnabled && selectedPerson.death === "" ? (
+              <label>Deceased</label>
+              <div className="checkboxDiv">
+                <input
+                  type="checkbox"
+                  checked={selectedPerson.deceased ? true : false}
+                  onChange={(e) => {
+                    if (editPersonEnabled) {
+                      const updatedPerson = {
+                        ...selectedPerson,
+                        deceased: e.target.checked,
+                      };
+                      onTreeUpdate(updatedPerson, "deceasedChange");
+                    }
+                  }}
+                  readOnly={!editPersonEnabled}
+                />
+              </div>
+            </li>
+            <li>
+              <label>Death Date</label>{" "}
+              {selectedPerson.deceased !== true ? (
                 <span className="birth-death"></span>
               ) : (
                 <input

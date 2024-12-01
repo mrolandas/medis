@@ -33,7 +33,7 @@ function Parents({ selectedPerson, onSelectedPerson, tree, onLifeYearRange }) {
     (parentId) => tree[parentId].deleted !== true
   );
 
-  if (parents.length === 0) return null;
+  if (parents.length === 0) return <div className="parents"></div>;
   return (
     <div className="parents">
       <h3>{selectedPerson.firstname}'s Parents</h3>
@@ -68,7 +68,9 @@ function GrandParents({
   );
   const grandParents = parents.flatMap((parentId) => tree[parentId].parents);
 
-  return grandParents.length === 0 ? null : (
+  return grandParents.length === 0 ? (
+    <div className="grandparents"></div>
+  ) : (
     <div className="grandparents">
       <h3>{selectedPerson.firstname}'s Grandparents</h3>
       <div className="person-reference">
