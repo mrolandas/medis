@@ -30,9 +30,7 @@ button:disabled {
 }
 
 input[type="text"],
-input[type="email"],
-input[type="date"],
-input[type="password"] {
+input[type="date"] {
   font-size: 0.9em;
 }
 
@@ -54,9 +52,7 @@ select {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  .App-header {
-    z-index: 20; /* Keep header above everything */
-  }
+  z-index: 20; /* Keep header above everything */
 }
 .App-header h1 {
   position: absolute;
@@ -84,7 +80,6 @@ select {
 .app-container {
   display: flex;
   flex-direction: column;
-  /* gap: 20px; */
   margin: 20px;
   align-items: center;
 }
@@ -114,7 +109,6 @@ select {
   justify-content: center;
   gap: 20px;
   width: 100%;
-  /* position: relative; */
   z-index: 5; /* Below overlay */
 }
 
@@ -266,15 +260,21 @@ select {
 .person-edit-container button {
   width: 90%;
   background-color: #fde8cb;
+  margin: 5px 0px 0px 0px;
 }
 .person-edit-container button:hover {
   background-color: #fbd98f;
 }
 
-.edit-person-details {
-  margin: 3px 0px 0px 0px;
+.edit-person-details,
+.edit-relationships {
   width: 90%;
   background-color: #fde8cb;
+}
+
+.edit-person-details-hovered,
+.edit-relationships-hovered {
+  background-color: #fbd98f;
 }
 
 .relationship-form {
@@ -304,21 +304,6 @@ select {
   margin: 0 5px;
   flex: 1;
   min-width: 0;
-}
-
-.edit-relationships {
-  margin: 3px 0px 0px 0px;
-  padding: 0;
-  width: 90%;
-  background-color: #fde8cb;
-}
-
-.edit-relationships h3 {
-  padding: 5px;
-  margin: 0;
-  font-size: small;
-  text-align: center;
-  color: #333;
 }
 
 .right-controls {
@@ -617,11 +602,6 @@ select {
   border-bottom: 1px solid #fabe70;
 }
 
-.search-results li:hover {
-  background-color: #fbd98f;
-  cursor: pointer;
-}
-
 .search-results li.selected {
   background-color: #fabe70;
   color: #333;
@@ -636,12 +616,11 @@ select {
   margin-left: auto;
 }
 
-.hidden {
-  display: none;
-}
-
 .add-person-container {
-  width: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 500px;
   position: fixed;
   top: 0;
   left: 0;
@@ -658,7 +637,7 @@ select {
 
 .add-person-container form {
   width: 100%;
-  max-width: 450px;
+  max-width: 500px;
   background-color: white;
   border-radius: 4px;
   box-shadow: 0 0 10px #ccc;
@@ -666,6 +645,7 @@ select {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
 }
 
 .add-person-container h3 {
@@ -678,18 +658,14 @@ select {
 }
 
 .add-person-container label {
-  font-size: 0.9em;
-  color: #333;
-}
+  padding: 0;
+  margin: 0;
+  width: 120px;
+  min-height: 2.3em;
+  display: flex;
+  align-items: center;
 
-.add-person-container input {
-  font-family: Arial, sans-serif;
-  padding: 8px;
-  margin: 0 0 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  flex: 1;
-  min-width: 0;
+  color: #333;
 }
 
 .overlay {
@@ -698,7 +674,75 @@ select {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   z-index: 10;
   cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+.error {
+  color: red;
+  font-size: 0.8em;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 2px 10px;
+}
+
+.form-group label {
+  flex: 0 0 100px;
+  text-align: left;
+  margin-right: 15px;
+  color: #333;
+  font-family: Arial, sans-serif;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group select {
+  margin: 0 0 2px 0;
+  flex: 1;
+  min-width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: Arial, sans-serif;
+  font-size: 0.9em;
+}
+
+.form-group .deceased-date input[type="date"] {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  margin: 0;
+  padding: 0;
+}
+
+.form-group .checkbox-wrapper {
+  display: flex;
+  flex: 1;
+
+  min-width: 50px;
+  width: 50px;
+}
+
+.form-group input[type="checkbox"] {
+  padding: 8px;
+  margin-left: 0;
+  align-self: flex-start; /* Align checkbox to the left within its space */
 }

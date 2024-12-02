@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 export default function EditPersonDetails({
   selectedPerson,
   onTreeUpdate,
   editPersonEnabled,
 }) {
   const [EditPersonDetails, setEditPersonDetails] = useState(false);
+
+  useEffect(() => {
+    if (!editPersonEnabled) {
+      setEditPersonDetails(false);
+    }
+  }, [editPersonEnabled]);
 
   function handleEditPersonDetails() {
     setEditPersonDetails(!EditPersonDetails);
@@ -17,8 +23,11 @@ export default function EditPersonDetails({
           : "Edit Person Details ▼"}
       </button>
 
-      <div className="edit-person-details">
-        <div className={EditPersonDetails ? "" : "hidden"}>
+      {/* Edit Person Details */}
+      {EditPersonDetails ? (
+        <div
+          className={`edit-person-details ${EditPersonDetails ? "" : "hidden"}`}
+        >
           <ul>
             <li>
               <label>Name:</label>
@@ -114,7 +123,7 @@ export default function EditPersonDetails({
             </li>
           </ul>
         </div>
-      </div>
+      ) : null}
     </>
   );
 }

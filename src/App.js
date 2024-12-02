@@ -170,25 +170,9 @@ export default function App() {
   return (
     <div className="App">
       <header className="App-header">
-        {/* {selectedPerson.id !== 0 && (
-          <div>
-            <button
-              value={selectedPerson}
-              onClick={() => handleSelectedPerson()}
-            >
-              🔃
-            </button>
-          </div>
-        )} */}
         <h1 onClick={() => handleSelectedPerson()}>Family</h1>
 
-        <AddPerson
-          onSelectedPerson={handleSelectedPerson}
-          selectedPerson={selectedPerson}
-          tree={tree}
-          onTreeUpdate={handleTreeUpdate}
-          editPersonEnabled={editPersonEnabled}
-        />
+        <AddPerson tree={tree} onTreeUpdate={handleTreeUpdate} />
         <Search
           selectedPerson={selectedPerson}
           onSelectedPerson={handleSelectedPerson}

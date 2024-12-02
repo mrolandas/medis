@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function EditRelationships({
   selectedPerson,
@@ -10,6 +10,12 @@ export default function EditRelationships({
   const [selectedSpouse, setSelectedSpouse] = useState(selectedPerson.spouse);
   const [selectedFather, setSelectedFather] = useState(selectedPerson.father);
   const [selectedMother, setSelectedMother] = useState(selectedPerson.mother);
+
+  useEffect(() => {
+    if (!editPersonEnabled) {
+      setEditRelationships(false);
+    }
+  }, [editPersonEnabled]);
 
   const oldSpouse = tree[selectedPerson.spouse];
   const oldFather =
@@ -83,10 +89,10 @@ export default function EditRelationships({
           ? "Finished Editing Relationships ▲"
           : "Edit Relationships ▼"}
       </button>
-      <div className="edit-relationships">
-        <div className={EditRelationships ? "" : "hidden"}>
-          {/* <h3>Edit Relationships</h3> */}
-
+      {EditRelationships ? (
+        <div
+          className={`edit-relationships ${EditRelationships ? "" : "hidden"}`}
+        >
           <form
             className="relationship-form"
             onSubmit={(e) => {
@@ -183,7 +189,7 @@ export default function EditRelationships({
             <button type="submit">Apply</button>
           </form>
         </div>
-      </div>
+      ) : null}
     </>
   );
 }

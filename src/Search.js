@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Search({
   selectedPerson,
@@ -9,10 +9,42 @@ export default function Search({
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchResultsRef = useRef(null);
+  const selectedRef = useRef(null);
 
   useEffect(() => {
-    setSelectedIndex(-1); // Reset selection when search changes
-  }, [searchQuery]);
+    if (searchResults.length > 0) {
+      setSelectedIndex(0); // Select the top result by default
+    } else {
+      setSelectedIndex(-1); // Reset selection when no results
+    }
+  }, [searchResults]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target)
+      ) {
+        setSearchResults([]);
+        setSearchQuery("");
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedRef.current) {
+      selectedRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedIndex]);
 
   function handleSearch(event) {
     const query = event.target.value.toLowerCase();
@@ -49,6 +81,11 @@ export default function Search({
           setSearchQuery("");
         }
         break;
+      case "Escape":
+        e.preventDefault();
+        setSearchResults([]);
+        setSearchQuery("");
+        break;
       default:
         // Handle any other key press
         break;
@@ -74,7 +111,7 @@ export default function Search({
             onClick={() => setSearchResults([])}
           ></div>
 
-          <div className="search-results">
+          <div className="search-results" ref={searchResultsRef}>
             {searchResults.length === 0 ? (
               <ul>
                 <li>No results found</li>
@@ -83,6 +120,7 @@ export default function Search({
               searchResults.map((person, index) => (
                 <ul key={person.id}>
                   <li
+                    ref={index === selectedIndex ? selectedRef : null}
                     className={index === selectedIndex ? "selected" : ""}
                     onClick={() => {
                       onSelectedPerson(person);
