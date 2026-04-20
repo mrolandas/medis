@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   useReactFlow,
   ReactFlowProvider,
   type NodeMouseHandler,
@@ -13,15 +12,14 @@ import "@xyflow/react/dist/style.css";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTreeLayout } from "./useTreeLayout";
 import { PersonNode } from "./PersonNode";
-import { MarriageEdge, ParentChildEdge, FamilyChildEdge } from "./CustomEdges";
+import { MarriageEdge, ParentChildEdge, FamilyForkEdge } from "./CustomEdges";
 import { useTranslation } from "../../hooks/useTranslation";
-import { useIsMobile } from "../../hooks/useIsMobile";
 
 const nodeTypes = { person: PersonNode };
 const edgeTypes = {
   marriage: MarriageEdge,
   parentChild: ParentChildEdge,
-  familyChild: FamilyChildEdge,
+  familyFork: FamilyForkEdge,
 };
 
 interface TreeViewInnerProps {
@@ -34,7 +32,6 @@ function TreeViewInner({
   onSelectPerson,
 }: TreeViewInnerProps) {
   const { t } = useTranslation();
-  const isMobile = useIsMobile();
   const { people, marriages, parentChild, loading } = useTreeData();
   const { nodes, edges } = useTreeLayout(
     people,
@@ -123,26 +120,12 @@ function TreeViewInner({
       <Background color="#e0e0e0" gap={20} />
       <Controls
         showInteractive={false}
-        position={isMobile ? "top-right" : "bottom-left"}
         style={{
           background: "#fff",
           borderRadius: 8,
           boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
         }}
       />
-      {!isMobile && (
-        <MiniMap
-          nodeColor={(node) => {
-            const data = node.data as { isSelected?: boolean };
-            return data?.isSelected ? "#e8915c" : "#c8d6e5";
-          }}
-          maskColor="rgba(248, 249, 250, 0.7)"
-          style={{
-            borderRadius: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-          }}
-        />
-      )}
     </ReactFlow>
   );
 }

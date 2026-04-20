@@ -47,18 +47,35 @@ export function ParentChildEdge({
   );
 }
 
-/** Edge from center of marriage line down to a child */
-export function FamilyChildEdge({ data, ...props }: EdgeProps) {
-  const { midX, startY, branchY, childX, childY } = data as {
-    midX: number;
-    startY: number;
+/** Single edge for an entire family fork: stem from marriage midpoint,
+ *  horizontal bar across all children, vertical drops to each child */
+export function FamilyForkEdge({ data, ...props }: EdgeProps) {
+  const { stemX, stemTopY, branchY, children } = data as {
+    stemX: number;
+    stemTopY: number;
     branchY: number;
-    childX: number;
-    childY: number;
+    children: { x: number; topY: number }[];
   };
 
-  // From marriage line center → drop below parents → horizontal to child → down to child
-  const path = `M ${midX} ${startY} L ${midX} ${branchY} L ${childX} ${branchY} L ${childX} ${childY}`;
+  // Build a single SVG path:
+  // 1. Vertical stem from marriage line center down to branch Y
+  let path = `M ${stemX} ${stemTopY} L ${stemX} ${branchY}`;
+
+  if (children.length === 1) {
+    // Single child: continue straight down
+    const c = children[0];
+    path += ` L ${c.x} ${branchY} L ${c.x} ${c.topY}`;
+  } else {
+    // Multiple children: horizontal bar from leftmost to rightmost
+    const leftX = children[0].x;
+    const rightX = children[children.length - 1].x;
+    path += ` M ${leftX} ${branchY} L ${rightX} ${branchY}`;
+
+    // Vertical drop from bar to each child
+    for (const c of children) {
+      path += ` M ${c.x} ${branchY} L ${c.x} ${c.topY}`;
+    }
+  }
 
   return (
     <BaseEdge

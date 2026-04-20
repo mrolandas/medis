@@ -203,49 +203,63 @@ export function useTreeLayout(
     }
 
     // Parent-child edges
-    const childEdgeAdded = new Set<string>();
-    for (const pc of parentChild) {
-      const marriageId = childToMarriageId.get(pc.child_id);
-      if (marriageId && !childEdgeAdded.has(pc.child_id)) {
-        childEdgeAdded.add(pc.child_id);
-        const marriage = marriages.find((m) => m.id === marriageId);
-        if (marriage) {
-          const p1 = g.node(marriage.person1_id);
-          const p2 = g.node(marriage.person2_id);
-          const child = g.node(pc.child_id);
-          if (p1 && p2 && child) {
-            const midX = (p1.x + p2.x) / 2;
-            // Marriage line is at center Y of parents
-            const marriageLineY = (p1.y + p2.y) / 2;
-            // Branch Y is below parent nodes with some spacing
-            const branchY = Math.max(p1.y, p2.y) + NODE_HEIGHT / 2 + 20;
-            const childTopY = child.y - NODE_HEIGHT / 2;
+    // For married couples: one "family fork" edge per marriage that draws
+    // the complete fork (stem + bar + drops) as a single path.
+    // For single parents: individual step-style edges.
+    const marriageForkAdded = new Set<string>();
+    for (const [mId, childIds] of marriageChildren) {
+      if (marriageForkAdded.has(mId)) continue;
+      marriageForkAdded.add(mId);
 
-            edges.push({
-              id: `pc-edge-family-${pc.child_id}`,
-              source: marriage.person1_id,
-              target: pc.child_id,
-              type: "familyChild",
-              data: {
-                midX,
-                startY: marriageLineY,
-                branchY,
-                childX: child.x,
-                childY: childTopY,
-              },
-              style: { stroke: "#666", strokeWidth: 2 },
-            });
-          }
+      const marriage = marriages.find((m) => m.id === mId);
+      if (!marriage) continue;
+      const p1 = g.node(marriage.person1_id);
+      const p2 = g.node(marriage.person2_id);
+      if (!p1 || !p2) continue;
+
+      const midX = (p1.x + p2.x) / 2;
+      const marriageLineY = (p1.y + p2.y) / 2;
+      const branchY = Math.max(p1.y, p2.y) + NODE_HEIGHT / 2 + 30;
+
+      // Collect child positions
+      const childPositions: { x: number; topY: number }[] = [];
+      for (const cId of childIds) {
+        const cn = g.node(cId);
+        if (cn) {
+          childPositions.push({ x: cn.x, topY: cn.y - NODE_HEIGHT / 2 });
         }
-      } else if (!marriageId) {
-        edges.push({
-          id: `pc-edge-${pc.id}`,
-          source: pc.parent_id,
-          target: pc.child_id,
-          type: "parentChild",
-          style: { stroke: "#666", strokeWidth: 2 },
-        });
       }
+      if (childPositions.length === 0) continue;
+
+      // Sort children left-to-right
+      childPositions.sort((a, b) => a.x - b.x);
+
+      edges.push({
+        id: `pc-fork-${mId}`,
+        source: marriage.person1_id,
+        target: childIds[0], // React Flow requires source/target
+        type: "familyFork",
+        data: {
+          stemX: midX,
+          stemTopY: marriageLineY,
+          branchY,
+          children: childPositions,
+        },
+        style: { stroke: "#666", strokeWidth: 2 },
+      });
+    }
+
+    // Single-parent edges (child has no married parents)
+    const marriageChildSet = new Set([...marriageChildren.values()].flat());
+    for (const pc of parentChild) {
+      if (marriageChildSet.has(pc.child_id)) continue;
+      edges.push({
+        id: `pc-edge-${pc.id}`,
+        source: pc.parent_id,
+        target: pc.child_id,
+        type: "parentChild",
+        style: { stroke: "#666", strokeWidth: 2 },
+      });
     }
 
     return { nodes, edges };
