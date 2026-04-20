@@ -83,14 +83,20 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
         placeholder={t("person.lastName")}
       />
 
-      {/* Maiden name */}
-      <label style={labelStyle}>{t("person.maidenName")}</label>
-      <input
-        style={inputStyle}
-        value={(val("maiden_name") as string) ?? ""}
-        onChange={(e) => handleChange("maiden_name", e.target.value || null)}
-        placeholder={t("person.maidenName")}
-      />
+      {/* Maiden name — only for females */}
+      {val("gender") !== "M" && (
+        <>
+          <label style={labelStyle}>{t("person.maidenName")}</label>
+          <input
+            style={inputStyle}
+            value={(val("maiden_name") as string) ?? ""}
+            onChange={(e) =>
+              handleChange("maiden_name", e.target.value || null)
+            }
+            placeholder={t("person.maidenName")}
+          />
+        </>
+      )}
 
       {/* Gender */}
       <label style={labelStyle}>{t("person.gender")}</label>
