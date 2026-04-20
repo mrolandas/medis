@@ -49,15 +49,14 @@ export function useTreeLayout(
     // Create a map of marriages for grouping spouses at the same rank
     const marriageMap = new Map<string, string[]>();
     for (const m of marriages) {
-      // Use a same-rank constraint: add edges both ways with minlen 0
-      // so dagre places spouses at the same rank
-      g.setEdge(m.person1_id, m.person2_id, { weight: 2, minlen: 0 });
-
-      // Track which marriage nodes exist for each person pair
+      // Track marriages by sorted person pair key
       const key = [m.person1_id, m.person2_id].sort().join("-");
       if (!marriageMap.has(key)) marriageMap.set(key, []);
       marriageMap.get(key)!.push(m.id);
     }
+
+    // For dagre: don't add spouse edges — we'll align them after layout.
+    // Only add parent→child edges so dagre computes correct ranks.
 
     // Build a lookup: child_id -> marriage id (if both parents are in a marriage)
     const childToMarriageId = new Map<string, string>();
@@ -95,6 +94,30 @@ export function useTreeLayout(
     }
 
     dagre.layout(g);
+
+    // Post-process: align spouses to the same Y and place them side-by-side
+    for (const m of marriages) {
+      const n1 = g.node(m.person1_id);
+      const n2 = g.node(m.person2_id);
+      if (n1 && n2) {
+        // Use the higher Y (closer to top) for both
+        const sharedY = Math.min(n1.y, n2.y);
+        n1.y = sharedY;
+        n2.y = sharedY;
+
+        // Place them side by side if they aren't already close
+        const midX = (n1.x + n2.x) / 2;
+        const spacing = NODE_WIDTH / 2 + SPOUSE_GAP / 2;
+        // Keep left/right order
+        if (n1.x <= n2.x) {
+          n1.x = midX - spacing;
+          n2.x = midX + spacing;
+        } else {
+          n2.x = midX - spacing;
+          n1.x = midX + spacing;
+        }
+      }
+    }
 
     // Convert dagre output to React Flow nodes
     const nodes: Node[] = [];
