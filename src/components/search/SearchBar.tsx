@@ -121,9 +121,10 @@ export function SearchBar({ onSelectPerson, fullWidth }: SearchBarProps) {
                 borderBottom:
                   i < results.length - 1 ? "1px solid #ecf0f1" : "none",
                 fontSize: 15,
+                color: "#2d3436",
               }}
             >
-              <span style={{ fontWeight: 600 }}>
+              <span style={{ fontWeight: 600, color: "#2d3436" }}>
                 {person.first_name} {person.last_name ?? ""}
               </span>
               {person.birth_date && (
