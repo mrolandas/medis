@@ -1,26 +1,20 @@
-import { type EdgeProps, BaseEdge, getStraightPath } from "@xyflow/react";
+import { type EdgeProps, BaseEdge } from "@xyflow/react";
 
-/** Horizontal dashed edge connecting spouses */
-export function MarriageEdge({
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  ...props
-}: EdgeProps) {
-  // Use midpoint Y for a straight horizontal line
-  const midY = (sourceY + targetY) / 2;
-  const [edgePath] = getStraightPath({
-    sourceX,
-    sourceY: midY,
-    targetX,
-    targetY: midY,
-  });
+/** Horizontal dashed edge connecting spouses — drawn in the gap between nodes */
+export function MarriageEdge({ data, ...props }: EdgeProps) {
+  const { leftX, rightX, lineY } = data as {
+    leftX: number;
+    rightX: number;
+    lineY: number;
+    midX: number;
+  };
+
+  const path = `M ${leftX} ${lineY} L ${rightX} ${lineY}`;
 
   return (
     <BaseEdge
       {...props}
-      path={edgePath}
+      path={path}
       style={{
         stroke: "#e8915c",
         strokeWidth: 2,
@@ -30,7 +24,7 @@ export function MarriageEdge({
   );
 }
 
-/** Vertical solid edge connecting parent to child */
+/** Step-style edge from single parent to child */
 export function ParentChildEdge({
   sourceX,
   sourceY,
@@ -38,7 +32,6 @@ export function ParentChildEdge({
   targetY,
   ...props
 }: EdgeProps) {
-  // Step-style path: go down from source, then across, then down to target
   const midY = (sourceY + targetY) / 2;
   const path = `M ${sourceX} ${sourceY} L ${sourceX} ${midY} L ${targetX} ${midY} L ${targetX} ${targetY}`;
 
@@ -54,18 +47,18 @@ export function ParentChildEdge({
   );
 }
 
-/** Edge from the midpoint of a marriage line down to a child */
+/** Edge from center of marriage line down to a child */
 export function FamilyChildEdge({ data, ...props }: EdgeProps) {
-  const { midX, midY, childX, childY } = data as {
+  const { midX, startY, branchY, childX, childY } = data as {
     midX: number;
-    midY: number;
+    startY: number;
+    branchY: number;
     childX: number;
     childY: number;
   };
 
-  // Vertical drop from marriage midpoint, then across to child, then down
-  const dropY = midY + 30;
-  const path = `M ${midX} ${midY} L ${midX} ${dropY} L ${childX} ${dropY} L ${childX} ${childY}`;
+  // From marriage line center → drop below parents → horizontal to child → down to child
+  const path = `M ${midX} ${startY} L ${midX} ${branchY} L ${childX} ${branchY} L ${childX} ${childY}`;
 
   return (
     <BaseEdge

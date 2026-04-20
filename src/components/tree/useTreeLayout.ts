@@ -104,19 +104,15 @@ export function useTreeLayout(
 
     dagre.layout(g);
 
-    // Post-process: place spouses side-by-side at the same Y.
-    // Since both parents have edges to the same children, dagre already
-    // assigns them the same rank (same Y). We only adjust X to pair them.
+    // ── Post-process: align spouses side-by-side at the same Y ──
     for (const m of marriages) {
       const n1 = g.node(m.person1_id);
       const n2 = g.node(m.person2_id);
       if (n1 && n2) {
-        // Force same Y (should already be equal for parents with shared children)
         const sharedY = Math.min(n1.y, n2.y);
         n1.y = sharedY;
         n2.y = sharedY;
 
-        // Place side by side
         const midX = (n1.x + n2.x) / 2;
         const spacing = NODE_WIDTH / 2 + SPOUSE_GAP / 2;
         if (n1.x <= n2.x) {
@@ -129,7 +125,39 @@ export function useTreeLayout(
       }
     }
 
-    // Convert dagre output to React Flow nodes
+    // ── Post-process: center children under their parent couple ──
+    // Group children by marriage
+    const marriageChildren = new Map<string, string[]>();
+    for (const [childId, mId] of childToMarriageId) {
+      if (!marriageChildren.has(mId)) marriageChildren.set(mId, []);
+      marriageChildren.get(mId)!.push(childId);
+    }
+
+    for (const [mId, childIds] of marriageChildren) {
+      const marriage = marriages.find((m) => m.id === mId);
+      if (!marriage) continue;
+      const p1 = g.node(marriage.person1_id);
+      const p2 = g.node(marriage.person2_id);
+      if (!p1 || !p2) continue;
+
+      const coupleMidX = (p1.x + p2.x) / 2;
+
+      // Compute the current center of children and shift them
+      const childNodes = childIds
+        .map((id) => g.node(id))
+        .filter((n): n is dagre.Node => !!n);
+      if (childNodes.length === 0) continue;
+
+      const childrenCenterX =
+        childNodes.reduce((sum, n) => sum + n.x, 0) / childNodes.length;
+      const shiftX = coupleMidX - childrenCenterX;
+
+      for (const cn of childNodes) {
+        cn.x += shiftX;
+      }
+    }
+
+    // ── Build React Flow nodes from final positions ──
     const nodes: Node[] = [];
     for (const person of people) {
       const nodeData = g.node(person.id);
@@ -150,24 +178,31 @@ export function useTreeLayout(
       });
     }
 
-    // Convert to React Flow edges
+    // ── Build edges ──
     const edges: Edge[] = [];
 
-    // Marriage edges (horizontal between spouses)
+    // Marriage edges: horizontal dashed line in the gap between spouses
     for (const m of marriages) {
+      const n1 = g.node(m.person1_id);
+      const n2 = g.node(m.person2_id);
+      if (!n1 || !n2) continue;
+
+      const leftX = Math.min(n1.x, n2.x) + NODE_WIDTH / 2;
+      const rightX = Math.max(n1.x, n2.x) - NODE_WIDTH / 2;
+      const lineY = (n1.y + n2.y) / 2; // center Y (equal after post-process)
+      const midX = (n1.x + n2.x) / 2;
+
       edges.push({
         id: `marriage-edge-${m.id}`,
         source: m.person1_id,
         target: m.person2_id,
         type: "marriage",
-        data: { marriage: m },
+        data: { leftX, rightX, lineY, midX },
         style: { stroke: "#e8915c", strokeWidth: 2 },
       });
     }
 
     // Parent-child edges
-    // When both parents are married, draw from marriage midpoint to child.
-    // When single parent, draw directly from parent to child.
     const childEdgeAdded = new Set<string>();
     for (const pc of parentChild) {
       const marriageId = childToMarriageId.get(pc.child_id);
@@ -179,12 +214,13 @@ export function useTreeLayout(
           const p2 = g.node(marriage.person2_id);
           const child = g.node(pc.child_id);
           if (p1 && p2 && child) {
-            // Midpoint between the two spouses
             const midX = (p1.x + p2.x) / 2;
-            const midY = Math.max(
-              p1.y + NODE_HEIGHT / 2,
-              p2.y + NODE_HEIGHT / 2,
-            );
+            // Marriage line is at center Y of parents
+            const marriageLineY = (p1.y + p2.y) / 2;
+            // Branch Y is below parent nodes with some spacing
+            const branchY = Math.max(p1.y, p2.y) + NODE_HEIGHT / 2 + 20;
+            const childTopY = child.y - NODE_HEIGHT / 2;
+
             edges.push({
               id: `pc-edge-family-${pc.child_id}`,
               source: marriage.person1_id,
@@ -192,9 +228,10 @@ export function useTreeLayout(
               type: "familyChild",
               data: {
                 midX,
-                midY,
+                startY: marriageLineY,
+                branchY,
                 childX: child.x,
-                childY: child.y - NODE_HEIGHT / 2,
+                childY: childTopY,
               },
               style: { stroke: "#666", strokeWidth: 2 },
             });
