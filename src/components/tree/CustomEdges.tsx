@@ -21,20 +21,37 @@ export function MarriageEdge({ id, data }: EdgeProps) {
   );
 }
 
-/** Edge from single parent to child — straight if aligned, step-style otherwise.
- *  Bend is 30px below parent (matching family fork branchY). */
+/** Edge from single parent to child.
+ *  Uses data.branchY when available (to match sibling fork bends),
+ *  otherwise bends 30px below parent. */
 export function ParentChildEdge({
   id,
   sourceX,
   sourceY,
   targetX,
   targetY,
+  data,
 }: EdgeProps) {
-  const bendY = sourceY + 30;
+  const { branchY, parentX, childX, parentBottomY, childTopY } = (data ??
+    {}) as {
+    branchY?: number;
+    parentX?: number;
+    childX?: number;
+    parentBottomY?: number;
+    childTopY?: number;
+  };
+
+  // Use precise coordinates from layout when available
+  const sx = parentX ?? sourceX;
+  const sy = parentBottomY ?? sourceY;
+  const tx = childX ?? targetX;
+  const ty = childTopY ?? targetY;
+  const by = branchY ?? sy + 30;
+
   const d =
-    Math.abs(sourceX - targetX) < 2
-      ? `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`
-      : `M ${sourceX} ${sourceY} L ${sourceX} ${bendY} L ${targetX} ${bendY} L ${targetX} ${targetY}`;
+    Math.abs(sx - tx) < 2
+      ? `M ${sx} ${sy} L ${tx} ${ty}`
+      : `M ${sx} ${sy} L ${sx} ${by} L ${tx} ${by} L ${tx} ${ty}`;
 
   return <path id={id} d={d} stroke="#666" strokeWidth={2} fill="none" />;
 }

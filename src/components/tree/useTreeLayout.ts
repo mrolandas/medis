@@ -146,10 +146,19 @@ export function useTreeLayout(
         n1.x = midX + spacing;
       }
 
-      // Step 2: Center children under this couple, treating married
-      // children as couple units so we shift child + spouse together
-      const childIds = marriageChildren.get(m.id);
-      if (!childIds || childIds.length === 0) continue;
+      // Step 2: Center ALL children of either spouse under this couple,
+      // including single-parent children. Treat married children as
+      // couple units so we shift child + spouse together.
+      const allChildIds = new Set<string>();
+      for (const pc of parentChild) {
+        if (pc.parent_id === m.person1_id || pc.parent_id === m.person2_id) {
+          // Don't include the spouses themselves
+          if (pc.child_id !== m.person1_id && pc.child_id !== m.person2_id) {
+            allChildIds.add(pc.child_id);
+          }
+        }
+      }
+      if (allChildIds.size === 0) continue;
 
       const coupleMidX = (n1.x + n2.x) / 2;
       const shiftNodeIds = new Set<string>();
@@ -157,7 +166,7 @@ export function useTreeLayout(
       let unitCount = 0;
       const counted = new Set<string>();
 
-      for (const childId of childIds) {
+      for (const childId of allChildIds) {
         if (counted.has(childId)) continue;
         counted.add(childId);
         const cn = g.node(childId);
@@ -196,24 +205,8 @@ export function useTreeLayout(
       }
     }
 
-    // ── Post-process: align single-parent children under their parent ──
-    // Only when the parent is NOT in any marriage (otherwise it causes overlaps
-    // with the married couple's fork children)
-    const marriageChildSet = new Set([...marriageChildren.values()].flat());
-    const marriedPersonIds = new Set(
-      marriages.flatMap((m) => [m.person1_id, m.person2_id]),
-    );
-    for (const pc of parentChild) {
-      if (marriageChildSet.has(pc.child_id)) continue;
-      if (marriedPersonIds.has(pc.parent_id)) continue;
-      const parentNode = g.node(pc.parent_id);
-      const childNode = g.node(pc.child_id);
-      if (parentNode && childNode) {
-        childNode.x = parentNode.x;
-      }
-    }
-
     // ── Post-process: resolve node overlaps at same Y level ──
+    const marriageChildSet = new Set([...marriageChildren.values()].flat());
     const nodesByY = new Map<number, dagre.Node[]>();
     for (const person of people) {
       const n = g.node(person.id);
@@ -330,13 +323,40 @@ export function useTreeLayout(
     }
 
     // Single-parent edges (child has no married parents)
+    // Compute branchY per marriage so single-parent bends match fork bends
+    const marriageBranchY = new Map<string, number>();
+    for (const m of marriages) {
+      const p1 = g.node(m.person1_id);
+      const p2 = g.node(m.person2_id);
+      if (p1 && p2) {
+        marriageBranchY.set(m.id, Math.max(p1.y, p2.y) + NODE_HEIGHT / 2 + 30);
+      }
+    }
     for (const pc of parentChild) {
       if (marriageChildSet.has(pc.child_id)) continue;
+      // Find the marriage this parent belongs to, so we can match branchY
+      const parentMarriage = marriages.find(
+        (m) => m.person1_id === pc.parent_id || m.person2_id === pc.parent_id,
+      );
+      const branchY = parentMarriage
+        ? marriageBranchY.get(parentMarriage.id)
+        : undefined;
+      const parentNode = g.node(pc.parent_id);
+      const childNode = g.node(pc.child_id);
       edges.push({
         id: `pc-edge-${pc.id}`,
         source: pc.parent_id,
         target: pc.child_id,
         type: "parentChild",
+        data: {
+          branchY,
+          parentX: parentNode?.x,
+          childX: childNode?.x,
+          parentBottomY: parentNode
+            ? parentNode.y + NODE_HEIGHT / 2
+            : undefined,
+          childTopY: childNode ? childNode.y - NODE_HEIGHT / 2 : undefined,
+        },
         style: { stroke: "#666", strokeWidth: 2 },
       });
     }
