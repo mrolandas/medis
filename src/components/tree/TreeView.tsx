@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -24,12 +24,22 @@ const edgeTypes = {
 
 interface TreeViewInnerProps {
   selectedPersonId: string | null;
-  onSelectPerson: (id: string) => void;
+  highlightedPersonId: string | null;
+  focusedPersonId: string | null;
+  activeHighlightIds: string[];
+  dimNonHighlighted: boolean;
+  onPersonClick: (id: string) => void;
+  onBackgroundClick: () => void;
 }
 
 function TreeViewInner({
   selectedPersonId,
-  onSelectPerson,
+  highlightedPersonId,
+  focusedPersonId,
+  activeHighlightIds,
+  dimNonHighlighted,
+  onPersonClick,
+  onBackgroundClick,
 }: TreeViewInnerProps) {
   const { t } = useTranslation();
   const { people, marriages, parentChild, loading } = useTreeData();
@@ -38,24 +48,41 @@ function TreeViewInner({
     marriages,
     parentChild,
     selectedPersonId,
+    focusedPersonId,
+    activeHighlightIds,
+    dimNonHighlighted,
   );
-  const { fitView } = useReactFlow();
+  const { fitView, setCenter } = useReactFlow();
   const initialFitDone = useRef(false);
 
   // Fit view once after initial layout
   const onNodesChange = useCallback(() => {
     if (!initialFitDone.current && nodes.length > 0) {
       initialFitDone.current = true;
-      setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
+      setTimeout(() => fitView({ padding: 0.08, duration: 300 }), 50);
     }
   }, [nodes.length, fitView]);
 
+  // Zoom to highlighted (searched) person
+  useEffect(() => {
+    if (!highlightedPersonId) return;
+    const node = nodes.find((n) => n.id === highlightedPersonId);
+    if (!node) return;
+    const x = node.position.x + (node.width ?? 260) / 2;
+    const y = node.position.y + (node.height ?? 80) / 2;
+    setTimeout(() => setCenter(x, y, { zoom: 1, duration: 500 }), 100);
+  }, [highlightedPersonId, nodes, setCenter]);
+
   const onNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
-      onSelectPerson(node.id);
+      onPersonClick(node.id);
     },
-    [onSelectPerson],
+    [onPersonClick],
   );
+
+  const onPaneClick = useCallback(() => {
+    onBackgroundClick();
+  }, [onBackgroundClick]);
 
   const defaultEdgeOptions = useMemo(
     () => ({
@@ -108,10 +135,11 @@ function TreeViewInner({
       edgeTypes={edgeTypes}
       defaultEdgeOptions={defaultEdgeOptions}
       onNodeClick={onNodeClick}
+      onPaneClick={onPaneClick}
       onNodesChange={onNodesChange}
       fitView
-      fitViewOptions={{ padding: 0.2 }}
-      minZoom={0.2}
+      fitViewOptions={{ padding: 0.08 }}
+      minZoom={0.12}
       maxZoom={2}
       attributionPosition="bottom-left"
       proOptions={{ hideAttribution: true }}
@@ -133,15 +161,33 @@ function TreeViewInner({
 // Wrap with ReactFlowProvider
 interface TreeViewProps {
   selectedPersonId: string | null;
-  onSelectPerson: (id: string) => void;
+  highlightedPersonId: string | null;
+  focusedPersonId: string | null;
+  activeHighlightIds: string[];
+  dimNonHighlighted: boolean;
+  onPersonClick: (id: string) => void;
+  onBackgroundClick: () => void;
 }
 
-export function TreeView({ selectedPersonId, onSelectPerson }: TreeViewProps) {
+export function TreeView({
+  selectedPersonId,
+  highlightedPersonId,
+  focusedPersonId,
+  activeHighlightIds,
+  dimNonHighlighted,
+  onPersonClick,
+  onBackgroundClick,
+}: TreeViewProps) {
   return (
     <ReactFlowProvider>
       <TreeViewInner
         selectedPersonId={selectedPersonId}
-        onSelectPerson={onSelectPerson}
+        highlightedPersonId={highlightedPersonId}
+        focusedPersonId={focusedPersonId}
+        activeHighlightIds={activeHighlightIds}
+        dimNonHighlighted={dimNonHighlighted}
+        onPersonClick={onPersonClick}
+        onBackgroundClick={onBackgroundClick}
       />
     </ReactFlowProvider>
   );

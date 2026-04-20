@@ -13,9 +13,10 @@ export function MarriageEdge({ id, data }: EdgeProps) {
     <path
       id={id}
       d={`M ${leftX} ${lineY} L ${rightX} ${lineY}`}
-      stroke="#e8915c"
-      strokeWidth={2}
-      strokeDasharray="6 3"
+      stroke="#cf7d47"
+      strokeWidth={2.5}
+      strokeDasharray="7 4"
+      strokeLinecap="round"
       fill="none"
     />
   );
@@ -32,28 +33,25 @@ export function ParentChildEdge({
   targetY,
   data,
 }: EdgeProps) {
-  const { branchY, parentX, childX, parentBottomY, childTopY } = (data ??
-    {}) as {
-    branchY?: number;
-    parentX?: number;
-    childX?: number;
-    parentBottomY?: number;
-    childTopY?: number;
-  };
-
-  // Use precise coordinates from layout when available
-  const sx = parentX ?? sourceX;
-  const sy = parentBottomY ?? sourceY;
-  const tx = childX ?? targetX;
-  const ty = childTopY ?? targetY;
-  const by = branchY ?? sy + 30;
+  const { branchY } = (data ?? {}) as { branchY?: number };
+  const by = branchY ?? sourceY + 30;
 
   const d =
-    Math.abs(sx - tx) < 2
-      ? `M ${sx} ${sy} L ${tx} ${ty}`
-      : `M ${sx} ${sy} L ${sx} ${by} L ${tx} ${by} L ${tx} ${ty}`;
+    Math.abs(sourceX - targetX) < 2
+      ? `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`
+      : `M ${sourceX} ${sourceY} L ${sourceX} ${by} L ${targetX} ${by} L ${targetX} ${targetY}`;
 
-  return <path id={id} d={d} stroke="#666" strokeWidth={2} fill="none" />;
+  return (
+    <path
+      id={id}
+      d={d}
+      stroke="#6d7d8c"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  );
 }
 
 /** Single edge for an entire family fork: stem from couple bottom,
@@ -86,5 +84,15 @@ export function FamilyForkEdge({ id, data }: EdgeProps) {
     }
   }
 
-  return <path id={id} d={d} stroke="#666" strokeWidth={2} fill="none" />;
+  return (
+    <path
+      id={id}
+      d={d}
+      stroke="#5f6368"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  );
 }

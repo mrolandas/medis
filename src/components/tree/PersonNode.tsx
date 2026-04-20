@@ -5,6 +5,9 @@ import type { Person, Confidence } from "../../types";
 interface PersonNodeData {
   person: Person;
   isSelected: boolean;
+  isHighlighted: boolean;
+  isFocused: boolean;
+  isDimmed: boolean;
   [key: string]: unknown;
 }
 
@@ -54,10 +57,13 @@ const CONFIDENCE_LABELS: Record<Confidence, string> = {
 };
 
 function PersonNodeComponent({ data }: NodeProps) {
-  const { person, isSelected } = data as PersonNodeData;
+  const { person, isSelected, isHighlighted, isFocused, isDimmed } =
+    data as PersonNodeData;
   const displayName = person.maiden_name
     ? `${person.first_name} ${person.last_name ?? ""} (${person.maiden_name})`
     : `${person.first_name} ${person.last_name ?? ""}`;
+
+  const glowing = isSelected || isHighlighted || isFocused;
 
   return (
     <>
@@ -70,17 +76,37 @@ function PersonNodeComponent({ data }: NodeProps) {
         style={{
           padding: "10px 14px",
           borderRadius: 10,
-          background: isSelected ? "#fff8f0" : "#ffffff",
-          border: confidenceBorder(person.confidence),
-          boxShadow: isSelected
-            ? "0 0 0 3px #e8915c, 0 2px 8px rgba(0,0,0,0.15)"
-            : "0 2px 6px rgba(0,0,0,0.1)",
+          background: isFocused ? "#fff4e8" : glowing ? "#fff8f0" : "#ffffff",
+          border: isFocused
+            ? "3px solid #e8915c"
+            : isHighlighted
+              ? "2px solid #3498db"
+              : confidenceBorder(person.confidence),
+          boxShadow: isFocused
+            ? "0 0 0 5px rgba(232,145,92,0.22), 0 4px 14px rgba(0,0,0,0.18)"
+            : isHighlighted
+              ? "0 0 0 4px rgba(52,152,219,0.4), 0 2px 8px rgba(0,0,0,0.15)"
+              : isSelected
+                ? "0 0 0 3px #e8915c, 0 2px 8px rgba(0,0,0,0.15)"
+                : "0 2px 6px rgba(0,0,0,0.1)",
           cursor: "pointer",
           width: 260,
+          height: 80,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
           textAlign: "center",
           fontFamily: "'Segoe UI', system-ui, sans-serif",
           position: "relative",
-          opacity: person.confidence === "uncertain" ? 0.85 : 1,
+          opacity: isDimmed
+            ? 0.26
+            : person.confidence === "uncertain"
+              ? 0.85
+              : 1,
+          transform: isFocused ? "scale(1.02)" : "scale(1)",
+          transition:
+            "opacity 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease",
         }}
       >
         {/* Confidence badge */}
