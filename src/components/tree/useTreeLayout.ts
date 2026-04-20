@@ -3,7 +3,7 @@ import dagre from "dagre";
 import { type Node, type Edge, Position } from "@xyflow/react";
 import type { Person, Marriage, ParentChild } from "../../types";
 
-const NODE_WIDTH = 200;
+const NODE_WIDTH = 260;
 const NODE_HEIGHT = 80;
 const SPOUSE_GAP = 40;
 

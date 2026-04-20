@@ -77,7 +77,7 @@ function PersonNodeComponent({ data }: NodeProps) {
             : "0 2px 6px rgba(0,0,0,0.1)",
           cursor: "pointer",
           minWidth: 170,
-          maxWidth: 220,
+          maxWidth: 260,
           textAlign: "center",
           fontFamily: "'Segoe UI', system-ui, sans-serif",
           position: "relative",
@@ -147,6 +147,7 @@ function PersonNodeComponent({ data }: NodeProps) {
             fontSize: 13,
             color: "#7f8c8d",
             marginTop: 2,
+            whiteSpace: "nowrap",
           }}
         >
           {lifespan(person)}
