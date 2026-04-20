@@ -131,6 +131,73 @@ export function RelationshipsSection({
     marginTop: 4,
   };
 
+  const toggleAdding = useCallback(
+    (type: "spouse" | "parent" | "child") => {
+      if (addingType === type) {
+        setAddingType(null);
+        setSelectedId("");
+      } else {
+        setAddingType(type);
+        setSelectedId("");
+      }
+    },
+    [addingType],
+  );
+
+  const renderDropdown = () => (
+    <div
+      style={{
+        marginTop: 8,
+        padding: 12,
+        background: "#fafafa",
+        borderRadius: 10,
+        border: "2px solid #dfe6e9",
+      }}
+    >
+      <select
+        value={selectedId}
+        onChange={(e) => setSelectedId(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px 12px",
+          fontSize: 16,
+          border: "2px solid #dfe6e9",
+          borderRadius: 8,
+          marginBottom: 8,
+        }}
+      >
+        <option value="">{t("action.selectPerson")}</option>
+        {availablePeople.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.first_name} {p.last_name ?? ""}
+          </option>
+        ))}
+      </select>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={handleAdd}
+          disabled={!selectedId}
+          style={{
+            ...addButtonStyle,
+            background: selectedId ? "#4a7c59" : "#b2bec3",
+            color: "#fff",
+          }}
+        >
+          {t("action.confirm")}
+        </button>
+        <button
+          onClick={() => {
+            setAddingType(null);
+            setSelectedId("");
+          }}
+          style={addButtonStyle}
+        >
+          {t("action.cancel")}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding: "0 4px" }}>
       {/* Spouses */}
@@ -168,9 +235,10 @@ export function RelationshipsSection({
           );
         })}
         <br />
-        <button style={addButtonStyle} onClick={() => setAddingType("spouse")}>
+        <button style={addButtonStyle} onClick={() => toggleAdding("spouse")}>
           + {t("action.addSpouse")}
         </button>
+        {addingType === "spouse" && renderDropdown()}
       </div>
 
       {/* Parents */}
@@ -200,12 +268,15 @@ export function RelationshipsSection({
         ))}
         <br />
         {personParents.length < 2 && (
-          <button
-            style={addButtonStyle}
-            onClick={() => setAddingType("parent")}
-          >
-            + {t("action.addParent")}
-          </button>
+          <>
+            <button
+              style={addButtonStyle}
+              onClick={() => toggleAdding("parent")}
+            >
+              + {t("action.addParent")}
+            </button>
+            {addingType === "parent" && renderDropdown()}
+          </>
         )}
       </div>
 
@@ -235,70 +306,11 @@ export function RelationshipsSection({
           </span>
         ))}
         <br />
-        <button style={addButtonStyle} onClick={() => setAddingType("child")}>
+        <button style={addButtonStyle} onClick={() => toggleAdding("child")}>
           + {t("action.addChild")}
         </button>
+        {addingType === "child" && renderDropdown()}
       </div>
-
-      {/* Add relation dropdown */}
-      {addingType && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: 16,
-            background: "#fafafa",
-            borderRadius: 10,
-            border: "2px solid #dfe6e9",
-          }}
-        >
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-            {addingType === "spouse" && t("action.addSpouse")}
-            {addingType === "parent" && t("action.addParent")}
-            {addingType === "child" && t("action.addChild")}
-          </div>
-          <select
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              fontSize: 16,
-              border: "2px solid #dfe6e9",
-              borderRadius: 8,
-              marginBottom: 8,
-            }}
-          >
-            <option value="">{t("action.selectPerson")}</option>
-            {availablePeople.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.first_name} {p.last_name ?? ""}
-              </option>
-            ))}
-          </select>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={handleAdd}
-              disabled={!selectedId}
-              style={{
-                ...addButtonStyle,
-                background: selectedId ? "#4a7c59" : "#b2bec3",
-                color: "#fff",
-              }}
-            >
-              {t("action.confirm")}
-            </button>
-            <button
-              onClick={() => {
-                setAddingType(null);
-                setSelectedId("");
-              }}
-              style={addButtonStyle}
-            >
-              {t("action.cancel")}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
