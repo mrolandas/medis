@@ -76,8 +76,7 @@ function PersonNodeComponent({ data }: NodeProps) {
             ? "0 0 0 3px #e8915c, 0 2px 8px rgba(0,0,0,0.15)"
             : "0 2px 6px rgba(0,0,0,0.1)",
           cursor: "pointer",
-          minWidth: 170,
-          maxWidth: 260,
+          width: 260,
           textAlign: "center",
           fontFamily: "'Segoe UI', system-ui, sans-serif",
           position: "relative",
