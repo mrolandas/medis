@@ -1,0 +1,86 @@
+/* Global styles — elderly-friendly defaults */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: #2d3436;
+  background: #f8f9fa;
+  line-height: 1.5;
+}
+
+/* Ensure all inputs/buttons inherit font */
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Focus styles for accessibility */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #e8915c !important;
+  box-shadow: 0 0 0 3px rgba(232, 145, 92, 0.2);
+}
+
+button:focus-visible {
+  outline: 3px solid #e8915c;
+  outline-offset: 2px;
+}
+
+/* Large touch targets */
+button {
+  min-height: 40px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* React Flow overrides for elderly-friendly controls */
+.react-flow__controls-button {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.react-flow__controls-button svg {
+  max-width: 18px !important;
+  max-height: 18px !important;
+}
+
+.react-flow__minimap {
+  border-radius: 8px;
+}
