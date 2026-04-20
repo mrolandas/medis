@@ -1,10 +1,13 @@
 import { TreeDataProvider } from "./providers/TreeDataProvider";
 import { AppLayout } from "./components/layout/AppLayout";
+import { AuthGate } from "./components/common/AuthGate";
 
 export default function App() {
   return (
-    <TreeDataProvider>
-      <AppLayout />
-    </TreeDataProvider>
+    <AuthGate>
+      <TreeDataProvider>
+        <AppLayout />
+      </TreeDataProvider>
+    </AuthGate>
   );
 }

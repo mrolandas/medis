@@ -8,6 +8,12 @@ const lt = {
   "app.error": "Įvyko klaida",
   "app.noData": "Nėra duomenų",
 
+  // Auth gate
+  "auth.title": "Prisijungimas",
+  "auth.password": "Slaptažodis",
+  "auth.submit": "Prisijungti",
+  "auth.error": "Neteisingas slaptažodis",
+
   // Person fields
   "person.firstName": "Vardas",
   "person.lastName": "Pavardė",
