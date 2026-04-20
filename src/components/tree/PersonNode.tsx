@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { Person, Confidence } from "../../types";
+import { NODE_WIDTH, NODE_HEIGHT } from "./useTreeLayout";
 
 interface PersonNodeData {
   person: Person;
@@ -90,8 +91,8 @@ function PersonNodeComponent({ data }: NodeProps) {
                 ? "0 0 0 3px #e8915c, 0 2px 8px rgba(0,0,0,0.15)"
                 : "0 2px 6px rgba(0,0,0,0.1)",
           cursor: "pointer",
-          width: 260,
-          height: 80,
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
           boxSizing: "border-box",
           display: "flex",
           flexDirection: "column",

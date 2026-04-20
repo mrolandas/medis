@@ -3,16 +3,38 @@ import calcTree from "relatives-tree";
 import { type Node, type Edge, Position } from "@xyflow/react";
 import type { Person, Marriage, ParentChild } from "../../types";
 
-const NODE_WIDTH = 260;
-const NODE_HEIGHT = 80;
-const BASE_GAP_X = 20;
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 76;
+const BASE_GAP_X = 16;
 const BASE_GAP_Y = 80;
-const FAMILY_CLUSTER_PADDING = 24;
-const INTER_FAMILY_GAP = 72;
+const FAMILY_CLUSTER_PADDING = 18;
+const INTER_FAMILY_GAP = 48;
 
 interface LayoutResult {
   nodes: Node[];
   edges: Edge[];
+}
+
+function compareNullableStrings(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number {
+  const left = (a ?? "").trim().toLocaleLowerCase();
+  const right = (b ?? "").trim().toLocaleLowerCase();
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+function compareIsoDates(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number {
+  const left = a ?? "9999-12-31";
+  const right = b ?? "9999-12-31";
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
 }
 
 /**
@@ -31,23 +53,62 @@ export function useTreeLayout(
   return useMemo(() => {
     if (people.length === 0) return { nodes: [], edges: [] };
 
+    const personById = new Map(people.map((person) => [person.id, person]));
+
+    const comparePersonIds = (leftId: string, rightId: string) => {
+      const left = personById.get(leftId);
+      const right = personById.get(rightId);
+      if (!left || !right) return leftId.localeCompare(rightId);
+
+      return (
+        compareIsoDates(left.birth_date, right.birth_date) ||
+        compareNullableStrings(left.last_name, right.last_name) ||
+        compareNullableStrings(left.maiden_name, right.maiden_name) ||
+        compareNullableStrings(left.first_name, right.first_name) ||
+        compareIsoDates(left.created_at, right.created_at) ||
+        left.id.localeCompare(right.id)
+      );
+    };
+
+    const sortedPeople = [...people].sort((a, b) =>
+      comparePersonIds(a.id, b.id),
+    );
+    const sortedParentChild = [...parentChild].sort((a, b) => {
+      return (
+        comparePersonIds(a.parent_id, b.parent_id) ||
+        comparePersonIds(a.child_id, b.child_id) ||
+        a.id.localeCompare(b.id)
+      );
+    });
+    const sortedMarriages = [...marriages].sort((a, b) => {
+      return (
+        a.order_index - b.order_index ||
+        comparePersonIds(a.person1_id, b.person1_id) ||
+        comparePersonIds(a.person2_id, b.person2_id) ||
+        compareIsoDates(a.marriage_date, b.marriage_date) ||
+        a.id.localeCompare(b.id)
+      );
+    });
+
     // ── Build siblings lookup ──
     // Two people are siblings if they share at least one parent
     const parentToChildren = new Map<string, Set<string>>();
-    for (const pc of parentChild) {
+    for (const pc of sortedParentChild) {
       if (!parentToChildren.has(pc.parent_id))
         parentToChildren.set(pc.parent_id, new Set());
       parentToChildren.get(pc.parent_id)!.add(pc.child_id);
     }
 
     const personSiblings = new Map<string, Set<string>>();
-    for (const person of people) {
+    for (const person of sortedPeople) {
       const siblings = new Set<string>();
-      const myParents = parentChild
+      const myParents = sortedParentChild
         .filter((pc) => pc.child_id === person.id)
         .map((pc) => pc.parent_id);
       for (const parentId of myParents) {
-        const children = parentToChildren.get(parentId);
+        const children = [...(parentToChildren.get(parentId) ?? [])].sort(
+          comparePersonIds,
+        );
         if (children) {
           for (const childId of children) {
             if (childId !== person.id) siblings.add(childId);
@@ -58,43 +119,51 @@ export function useTreeLayout(
     }
 
     // ── Convert to relatives-tree input format ──
-    const rtNodes = people.map((person) => ({
+    const rtNodes = sortedPeople.map((person) => ({
       id: person.id,
       gender: person.gender === "F" ? "female" : "male",
-      parents: parentChild
+      parents: sortedParentChild
         .filter((pc) => pc.child_id === person.id)
-        .map((pc) => ({ id: pc.parent_id, type: "blood" as const })),
-      children: parentChild
+        .map((pc) => ({ id: pc.parent_id, type: "blood" as const }))
+        .sort((a, b) => comparePersonIds(a.id, b.id)),
+      children: sortedParentChild
         .filter((pc) => pc.parent_id === person.id)
-        .map((pc) => ({ id: pc.child_id, type: "blood" as const })),
-      spouses: marriages
+        .map((pc) => ({ id: pc.child_id, type: "blood" as const }))
+        .sort((a, b) => comparePersonIds(a.id, b.id)),
+      spouses: sortedMarriages
         .filter((m) => m.person1_id === person.id || m.person2_id === person.id)
         .map((m) => ({
           id: m.person1_id === person.id ? m.person2_id : m.person1_id,
           type: "married" as const,
+        }))
+        .sort((a, b) => comparePersonIds(a.id, b.id)),
+      siblings: [...(personSiblings.get(person.id) ?? [])]
+        .sort(comparePersonIds)
+        .map((id) => ({
+          id,
+          type: "blood" as const,
         })),
-      siblings: [...(personSiblings.get(person.id) ?? [])].map((id) => ({
-        id,
-        type: "blood" as const,
-      })),
     }));
 
     // ── Main tree layout from strongest root ──
-    const hasParent = new Set(parentChild.map((pc) => pc.child_id));
-    const roots = people.filter((p) => !hasParent.has(p.id));
+    const hasParent = new Set(sortedParentChild.map((pc) => pc.child_id));
+    const roots = sortedPeople.filter((p) => !hasParent.has(p.id));
 
     function descCount(id: string, seen = new Set<string>()): number {
       if (seen.has(id)) return 0;
       seen.add(id);
       let c = 0;
-      for (const pc of parentChild) {
+      for (const pc of sortedParentChild) {
         if (pc.parent_id === id) c += 1 + descCount(pc.child_id, seen);
       }
       return c;
     }
 
-    roots.sort((a, b) => descCount(b.id) - descCount(a.id));
-    const rootId = roots[0]?.id ?? people[0].id;
+    roots.sort(
+      (a, b) =>
+        descCount(b.id) - descCount(a.id) || comparePersonIds(a.id, b.id),
+    );
+    const rootId = roots[0]?.id ?? sortedPeople[0].id;
 
     const tree = calcTree(rtNodes as Parameters<typeof calcTree>[0], {
       rootId,
@@ -135,8 +204,9 @@ export function useTreeLayout(
         missAdj.get(a)!.add(b);
         missAdj.get(b)!.add(a);
       };
-      for (const pc of parentChild) addMissEdge(pc.parent_id, pc.child_id);
-      for (const m of marriages) addMissEdge(m.person1_id, m.person2_id);
+      for (const pc of sortedParentChild)
+        addMissEdge(pc.parent_id, pc.child_id);
+      for (const m of sortedMarriages) addMissEdge(m.person1_id, m.person2_id);
       for (const [pid, sibs] of personSiblings) {
         for (const s of sibs) addMissEdge(pid, s);
       }
@@ -193,7 +263,9 @@ export function useTreeLayout(
           }));
 
         const compRoots = comp.filter((id) => !hasParent.has(id));
-        compRoots.sort((a, b) => descCount(b) - descCount(a));
+        compRoots.sort(
+          (a, b) => descCount(b) - descCount(a) || comparePersonIds(a, b),
+        );
         const compRoot = compRoots[0] ?? comp[0];
 
         const miniTree = calcTree(compNodes as Parameters<typeof calcTree>[0], {
@@ -209,7 +281,7 @@ export function useTreeLayout(
         // Find how this component attaches to already placed nodes
         let bridge: Bridge | null = null;
 
-        for (const pc of parentChild) {
+        for (const pc of sortedParentChild) {
           if (compSet.has(pc.parent_id) && positions.has(pc.child_id)) {
             bridge = {
               miniId: pc.parent_id,
@@ -229,7 +301,7 @@ export function useTreeLayout(
         }
 
         if (!bridge) {
-          for (const m of marriages) {
+          for (const m of sortedMarriages) {
             if (compSet.has(m.person1_id) && positions.has(m.person2_id)) {
               bridge = {
                 miniId: m.person1_id,
@@ -348,10 +420,15 @@ export function useTreeLayout(
       }
     }
 
-    // ── Normalize Y by real generations (DB constraints) ──
-    // This prevents visually impossible ancestry (e.g. child appearing above ancestor).
+    // ── Assign Y by generation (topological sort of parent→child DAG) ──
+    // relatives-tree's `top` values are relative to its chosen root and don't
+    // reflect the true generational depth of multi-root trees (e.g. two
+    // unrelated root couples joined via a marriage of their children land at
+    // wildly different `top` values). We override Y here so every person's row
+    // equals their true genealogical generation: 0 for root individuals, +1 per
+    // parent→child step. Spouses are forced to the same row (max of both).
     const ufParent = new Map<string, string>();
-    for (const p of people) ufParent.set(p.id, p.id);
+    for (const p of sortedPeople) ufParent.set(p.id, p.id);
 
     const ufFind = (id: string): string => {
       const parent = ufParent.get(id) ?? id;
@@ -367,8 +444,7 @@ export function useTreeLayout(
       if (ra !== rb) ufParent.set(rb, ra);
     };
 
-    // Spouses share a generation level.
-    for (const m of marriages) ufUnion(m.person1_id, m.person2_id);
+    for (const m of sortedMarriages) ufUnion(m.person1_id, m.person2_id);
 
     const groupAdj = new Map<string, Set<string>>();
     const indegree = new Map<string, number>();
@@ -378,10 +454,9 @@ export function useTreeLayout(
       if (!indegree.has(g)) indegree.set(g, 0);
     };
 
-    for (const p of people) ensureGroup(ufFind(p.id));
+    for (const p of sortedPeople) ensureGroup(ufFind(p.id));
 
-    // Parent -> child edges define generation ordering between spouse-groups.
-    for (const pc of parentChild) {
+    for (const pc of sortedParentChild) {
       const gp = ufFind(pc.parent_id);
       const gc = ufFind(pc.child_id);
       if (gp === gc) continue;
@@ -397,28 +472,34 @@ export function useTreeLayout(
     const groupLevel = new Map<string, number>();
     for (const g of indegree.keys()) groupLevel.set(g, 0);
 
-    const queue: string[] = [];
+    const topoQueue: string[] = [];
     const topoOrder: string[] = [];
     for (const [g, deg] of indegree) {
-      if (deg === 0) queue.push(g);
+      if (deg === 0) topoQueue.push(g);
     }
 
-    while (queue.length > 0) {
-      const g = queue.shift()!;
+    while (topoQueue.length > 0) {
+      const g = topoQueue.shift()!;
       topoOrder.push(g);
       const base = groupLevel.get(g) ?? 0;
       for (const ch of groupAdj.get(g) ?? []) {
         groupLevel.set(ch, Math.max(groupLevel.get(ch) ?? 0, base + 1));
         indegree.set(ch, (indegree.get(ch) ?? 0) - 1);
-        if ((indegree.get(ch) ?? 0) === 0) queue.push(ch);
+        if ((indegree.get(ch) ?? 0) === 0) topoQueue.push(ch);
       }
     }
 
-    // Reverse relaxation: if a child's generation is already known from another
-    // branch, its parents must sit exactly one generation above it. This keeps
-    // incomplete ancestor branches aligned with complete ones.
+    // Reverse relaxation: for non-root groups only, push parents down so they
+    // sit exactly one row above the deepest child already placed. Root groups
+    // (those with no incoming parent edges in the DAG) are exempt — they must
+    // stay at level 0 regardless of how deep their in-law descendants are.
+    const rootGroups = new Set<string>();
+    for (const [g, deg] of indegree) {
+      if (deg === 0) rootGroups.add(g);
+    }
     for (let index = topoOrder.length - 1; index >= 0; index -= 1) {
       const g = topoOrder[index];
+      if (rootGroups.has(g)) continue; // never move root groups down
       let desired = groupLevel.get(g) ?? 0;
       for (const ch of groupAdj.get(g) ?? []) {
         desired = Math.max(desired, (groupLevel.get(ch) ?? 0) - 1);
@@ -426,9 +507,8 @@ export function useTreeLayout(
       groupLevel.set(g, desired);
     }
 
-    // Apply normalized generation Y while preserving X from relatives-tree layout.
     const TOP_MARGIN = 40;
-    for (const p of people) {
+    for (const p of sortedPeople) {
       const pos = positions.get(p.id);
       if (!pos) continue;
       const level = groupLevel.get(ufFind(p.id)) ?? 0;
@@ -443,7 +523,7 @@ export function useTreeLayout(
     const MIN_CENTER_GAP = NODE_WIDTH + GAP_X;
     const rowBuckets = new Map<number, string[]>();
 
-    for (const p of people) {
+    for (const p of sortedPeople) {
       const pos = positions.get(p.id);
       if (!pos) continue;
       const rowKey = Math.round(pos.y);
@@ -451,7 +531,11 @@ export function useTreeLayout(
       rowBuckets.get(rowKey)!.push(p.id);
     }
 
-    for (const ids of rowBuckets.values()) {
+    // Process rows top-to-bottom so each row's anchorX reads from already-
+    // finalized parent positions rather than raw relatives-tree X values.
+    const sortedRowKeys = [...rowBuckets.keys()].sort((a, b) => a - b);
+    for (const rowKey of sortedRowKeys) {
+      const ids = rowBuckets.get(rowKey)!;
       const rowSet = new Set(ids);
       const spouseParent = new Map<string, string>();
       for (const id of ids) spouseParent.set(id, id);
@@ -470,7 +554,7 @@ export function useTreeLayout(
         if (ra !== rb) spouseParent.set(rb, ra);
       };
 
-      for (const m of marriages) {
+      for (const m of sortedMarriages) {
         if (rowSet.has(m.person1_id) && rowSet.has(m.person2_id)) {
           spouseUnion(m.person1_id, m.person2_id);
         }
@@ -491,13 +575,13 @@ export function useTreeLayout(
         const parentIds = [
           ...new Set(
             members.flatMap((id) =>
-              parentChild
+              sortedParentChild
                 .filter((pc) => pc.child_id === id)
                 .map((pc) => pc.parent_id)
                 .filter((parentId) => positions.has(parentId)),
             ),
           ),
-        ].sort();
+        ].sort(comparePersonIds);
 
         const avgX =
           members.reduce((sum, id) => sum + (positions.get(id)?.x ?? 0), 0) /
@@ -512,14 +596,14 @@ export function useTreeLayout(
 
         const directChildIds = [
           ...new Set(
-            parentChild
+            sortedParentChild
               .filter(
                 (pc) =>
                   memberSet.has(pc.parent_id) && positions.has(pc.child_id),
               )
               .map((pc) => pc.child_id),
           ),
-        ];
+        ].sort(comparePersonIds);
         const ownSpan = (members.length - 1) * MIN_CENTER_GAP;
         const childSpan = Math.max(
           0,
@@ -594,6 +678,7 @@ export function useTreeLayout(
           previousFamilyKey && previousFamilyKey !== cluster.familyKey
             ? INTER_FAMILY_GAP
             : 0;
+
         const firstCenter = Math.max(
           desiredFirst,
           Number.isFinite(lastOccupied)
@@ -602,14 +687,14 @@ export function useTreeLayout(
         );
         const firstMemberCenter = firstCenter + (clusterSpan - ownSpan) / 2;
 
-        let clusterIndex = 0;
+        let memberIndex = 0;
         for (const group of cluster.groups) {
           for (const id of group.members) {
             const pos = positions.get(id);
             if (!pos) continue;
-            const x = firstMemberCenter + clusterIndex * MIN_CENTER_GAP;
+            const x = firstMemberCenter + memberIndex * MIN_CENTER_GAP;
             positions.set(id, { x, y: pos.y });
-            clusterIndex += 1;
+            memberIndex += 1;
           }
         }
 
@@ -617,11 +702,24 @@ export function useTreeLayout(
         previousFamilyKey = cluster.familyKey;
       }
     }
+    // (end of top-to-bottom row loop)
+
+    let minLeft = Infinity;
+    for (const pos of positions.values()) {
+      minLeft = Math.min(minLeft, pos.x - NODE_WIDTH / 2);
+    }
+
+    if (Number.isFinite(minLeft) && minLeft < 40) {
+      const shiftX = 40 - minLeft;
+      for (const [id, pos] of positions) {
+        positions.set(id, { x: pos.x + shiftX, y: pos.y });
+      }
+    }
 
     // ── Build React Flow nodes ──
     const activeHighlightSet = new Set(activeHighlightIds);
     const nodes: Node[] = [];
-    for (const person of people) {
+    for (const person of sortedPeople) {
       const pos = positions.get(person.id);
       if (!pos) continue;
       nodes.push({
@@ -653,13 +751,13 @@ export function useTreeLayout(
 
     // Helper lookups for edge building
     const childToMarriageId = new Map<string, string>();
-    for (const m of marriages) {
+    for (const m of sortedMarriages) {
       const children1 = new Set(
-        parentChild
+        sortedParentChild
           .filter((pc) => pc.parent_id === m.person1_id)
           .map((pc) => pc.child_id),
       );
-      for (const pc of parentChild) {
+      for (const pc of sortedParentChild) {
         if (pc.parent_id === m.person2_id && children1.has(pc.child_id)) {
           childToMarriageId.set(pc.child_id, m.id);
         }
@@ -676,7 +774,7 @@ export function useTreeLayout(
     const familiesByRow = new Map<number, { key: string; midX: number }[]>();
 
     for (const [mId] of marriageChildren) {
-      const marriage = marriages.find((m) => m.id === mId);
+      const marriage = sortedMarriages.find((m) => m.id === mId);
       if (!marriage) continue;
       const p1 = positions.get(marriage.person1_id);
       const p2 = positions.get(marriage.person2_id);
@@ -689,7 +787,7 @@ export function useTreeLayout(
       });
     }
 
-    for (const pc of parentChild) {
+    for (const pc of sortedParentChild) {
       if (marriageChildSet.has(pc.child_id)) continue;
       const parentPos = positions.get(pc.parent_id);
       if (!parentPos) continue;
@@ -709,7 +807,7 @@ export function useTreeLayout(
     }
 
     // Marriage edges: horizontal dashed line between spouses
-    for (const m of marriages) {
+    for (const m of sortedMarriages) {
       const p1 = positions.get(m.person1_id);
       const p2 = positions.get(m.person2_id);
       if (!p1 || !p2) continue;
@@ -735,7 +833,7 @@ export function useTreeLayout(
       if (marriageForkAdded.has(mId)) continue;
       marriageForkAdded.add(mId);
 
-      const marriage = marriages.find((m) => m.id === mId);
+      const marriage = sortedMarriages.find((m) => m.id === mId);
       if (!marriage) continue;
       const p1 = positions.get(marriage.person1_id);
       const p2 = positions.get(marriage.person2_id);
@@ -772,7 +870,7 @@ export function useTreeLayout(
     }
 
     // Single-parent edges
-    for (const pc of parentChild) {
+    for (const pc of sortedParentChild) {
       if (marriageChildSet.has(pc.child_id)) continue;
       const parentPos = positions.get(pc.parent_id);
       const lane = rowFamilyLane.get(`single:${pc.id}`) ?? 0;

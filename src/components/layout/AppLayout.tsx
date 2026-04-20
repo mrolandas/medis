@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { Header } from "./Header";
 import { TreeView } from "../tree/TreeView";
@@ -99,6 +99,17 @@ export function AppLayout() {
     setSelectedPersonId(null);
     setHighlightedPersonId(null);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (showAddModal) return;
+      handleTreeBackgroundClick();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleTreeBackgroundClick, showAddModal]);
 
   const handleClosePanel = useCallback(() => {
     setSelectedPersonId(null);

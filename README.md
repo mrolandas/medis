@@ -13,6 +13,9 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Session-based password gate for the UI
 - Focus and highlight mode for lineage browsing
 - Custom edge rendering for marriages and parent-child relationships
+- Deterministic, stable layout — tree structure does not shift when relationships are added or removed
+- Correct generational row assignment via topological sort of the parent→child DAG (spouses share a row; root couples are never displaced by in-law descendants)
+- Family fork edges handle children that span multiple rows (e.g. a sibling who married into a different generation)
 
 ## Tech Stack
 
@@ -98,4 +101,5 @@ Important files:
 
 - Authentication is intentionally lightweight and uses a session password gate in the browser.
 - The visual layout is custom and optimized for genealogy-specific constraints rather than generic graph layout.
-- Current work has focused on improving branch separation, generational correctness, and avoiding misleading parent-child placement.
+- `relatives-tree` is used to derive initial X positions. Y (generational row) is fully overridden by a topological sort so that root couples always appear at row 0 and no child can appear at the same row as or above their parents.
+- Family fork edges always extend their horizontal bar to include the couple's midpoint (`stemX`), so the stem is never left floating when all children are on one side of the couple.

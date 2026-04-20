@@ -64,23 +64,31 @@ export function FamilyForkEdge({ id, data }: EdgeProps) {
     children: { x: number; topY: number }[];
   };
 
-  // Build a single SVG path:
-  // 1. Vertical stem from parent bottom down to branch Y
+  // Build a single SVG path.
+  // When all children share the same row, draw a single horizontal bar
+  // connecting them for a clean visual. When children span multiple rows
+  // (e.g. a sibling who married into a deeper generation), draw individual
+  // elbow arms from the stem hub so lines never cross ambiguously.
+  const allSameRow = children.every((c) => c.topY === children[0].topY);
+
   let d = `M ${stemX} ${stemTopY} L ${stemX} ${branchY}`;
 
   if (children.length === 1) {
-    // Single child: continue straight down
     const c = children[0];
     d += ` L ${c.x} ${branchY} L ${c.x} ${c.topY}`;
-  } else {
-    // Multiple children: horizontal bar from leftmost to rightmost
-    const leftX = children[0].x;
-    const rightX = children[children.length - 1].x;
+  } else if (allSameRow) {
+    // All children on the same row: horizontal bar + vertical drops.
+    // The bar must extend to stemX so the stem is never left floating.
+    const leftX = Math.min(stemX, children[0].x);
+    const rightX = Math.max(stemX, children[children.length - 1].x);
     d += ` M ${leftX} ${branchY} L ${rightX} ${branchY}`;
-
-    // Vertical drop from bar to each child
     for (const c of children) {
       d += ` M ${c.x} ${branchY} L ${c.x} ${c.topY}`;
+    }
+  } else {
+    // Children on different rows: individual elbow arms from the stem hub
+    for (const c of children) {
+      d += ` M ${stemX} ${branchY} L ${c.x} ${branchY} L ${c.x} ${c.topY}`;
     }
   }
 
