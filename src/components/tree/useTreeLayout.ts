@@ -49,11 +49,9 @@ export function useTreeLayout(
     // Create a map of marriages for grouping spouses at the same rank
     const marriageMap = new Map<string, string[]>();
     for (const m of marriages) {
-      // Create a virtual "marriage" node to connect spouses and children
-      const mNodeId = `marriage-${m.id}`;
-      g.setNode(mNodeId, { width: 1, height: 1 });
-      g.setEdge(m.person1_id, mNodeId, { weight: 2 });
-      g.setEdge(m.person2_id, mNodeId, { weight: 2 });
+      // Use a same-rank constraint: add edges both ways with minlen 0
+      // so dagre places spouses at the same rank
+      g.setEdge(m.person1_id, m.person2_id, { weight: 2, minlen: 0 });
 
       // Track which marriage nodes exist for each person pair
       const key = [m.person1_id, m.person2_id].sort().join("-");
@@ -61,10 +59,9 @@ export function useTreeLayout(
       marriageMap.get(key)!.push(m.id);
     }
 
-    // Build a lookup: child_id -> marriage node (if both parents are in a marriage)
-    const childToMarriageNode = new Map<string, string>();
+    // Build a lookup: child_id -> marriage id (if both parents are in a marriage)
+    const childToMarriageId = new Map<string, string>();
     for (const pc of parentChild) {
-      // Find if this child's parents have a marriage
       const otherParents = parentChild
         .filter(
           (other) =>
@@ -76,20 +73,22 @@ export function useTreeLayout(
         const key = [pc.parent_id, otherParentId].sort().join("-");
         const marriageIds = marriageMap.get(key);
         if (marriageIds && marriageIds.length > 0) {
-          childToMarriageNode.set(pc.child_id, `marriage-${marriageIds[0]}`);
+          childToMarriageId.set(pc.child_id, marriageIds[0]);
         }
       }
     }
 
-    // Add parent-child edges
+    // Add parent-child edges — connect directly to ONE parent for dagre ranking
+    // (avoids the extra rank that a virtual marriage node creates)
     const childrenAdded = new Set<string>();
     for (const pc of parentChild) {
-      const mNode = childToMarriageNode.get(pc.child_id);
-      if (mNode && !childrenAdded.has(pc.child_id)) {
-        // Connect child to the marriage node (so child appears below both parents)
-        g.setEdge(mNode, pc.child_id, { weight: 1 });
-        childrenAdded.add(pc.child_id);
-      } else if (!mNode) {
+      if (childToMarriageId.has(pc.child_id)) {
+        if (!childrenAdded.has(pc.child_id)) {
+          // Connect child to the first parent for layout purposes
+          g.setEdge(pc.parent_id, pc.child_id, { weight: 1 });
+          childrenAdded.add(pc.child_id);
+        }
+      } else {
         // Single parent — connect directly
         g.setEdge(pc.parent_id, pc.child_id, { weight: 1 });
       }
@@ -138,11 +137,9 @@ export function useTreeLayout(
     // When single parent, draw directly from parent to child.
     const childEdgeAdded = new Set<string>();
     for (const pc of parentChild) {
-      const mNodeId = childToMarriageNode.get(pc.child_id);
-      if (mNodeId && !childEdgeAdded.has(pc.child_id)) {
+      const marriageId = childToMarriageId.get(pc.child_id);
+      if (marriageId && !childEdgeAdded.has(pc.child_id)) {
         childEdgeAdded.add(pc.child_id);
-        // Find the marriage to get both spouse IDs
-        const marriageId = mNodeId.replace("marriage-", "");
         const marriage = marriages.find((m) => m.id === marriageId);
         if (marriage) {
           const p1 = g.node(marriage.person1_id);
@@ -170,7 +167,7 @@ export function useTreeLayout(
             });
           }
         }
-      } else if (!mNodeId) {
+      } else if (!marriageId) {
         edges.push({
           id: `pc-edge-${pc.id}`,
           source: pc.parent_id,
