@@ -53,3 +53,28 @@ export function ParentChildEdge({
     />
   );
 }
+
+/** Edge from the midpoint of a marriage line down to a child */
+export function FamilyChildEdge({ data, ...props }: EdgeProps) {
+  const { midX, midY, childX, childY } = data as {
+    midX: number;
+    midY: number;
+    childX: number;
+    childY: number;
+  };
+
+  // Vertical drop from marriage midpoint, then across to child, then down
+  const dropY = midY + 30;
+  const path = `M ${midX} ${midY} L ${midX} ${dropY} L ${childX} ${dropY} L ${childX} ${childY}`;
+
+  return (
+    <BaseEdge
+      {...props}
+      path={path}
+      style={{
+        stroke: "#666",
+        strokeWidth: 2,
+      }}
+    />
+  );
+}

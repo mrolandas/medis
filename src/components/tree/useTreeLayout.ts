@@ -134,23 +134,51 @@ export function useTreeLayout(
     }
 
     // Parent-child edges
+    // When both parents are married, draw from marriage midpoint to child.
+    // When single parent, draw directly from parent to child.
+    const childEdgeAdded = new Set<string>();
     for (const pc of parentChild) {
-      // Avoid duplicate edges when both parents exist
-      if (childToMarriageNode.has(pc.child_id)) {
-        // Only add one edge per child from the "first" parent
-        const existingEdge = edges.find(
-          (e) => e.id.startsWith("pc-edge-") && e.target === pc.child_id,
-        );
-        if (existingEdge) continue;
+      const mNodeId = childToMarriageNode.get(pc.child_id);
+      if (mNodeId && !childEdgeAdded.has(pc.child_id)) {
+        childEdgeAdded.add(pc.child_id);
+        // Find the marriage to get both spouse IDs
+        const marriageId = mNodeId.replace("marriage-", "");
+        const marriage = marriages.find((m) => m.id === marriageId);
+        if (marriage) {
+          const p1 = g.node(marriage.person1_id);
+          const p2 = g.node(marriage.person2_id);
+          const child = g.node(pc.child_id);
+          if (p1 && p2 && child) {
+            // Midpoint between the two spouses
+            const midX = (p1.x + p2.x) / 2;
+            const midY = Math.max(
+              p1.y + NODE_HEIGHT / 2,
+              p2.y + NODE_HEIGHT / 2,
+            );
+            edges.push({
+              id: `pc-edge-family-${pc.child_id}`,
+              source: marriage.person1_id,
+              target: pc.child_id,
+              type: "familyChild",
+              data: {
+                midX,
+                midY,
+                childX: child.x,
+                childY: child.y - NODE_HEIGHT / 2,
+              },
+              style: { stroke: "#666", strokeWidth: 2 },
+            });
+          }
+        }
+      } else if (!mNodeId) {
+        edges.push({
+          id: `pc-edge-${pc.id}`,
+          source: pc.parent_id,
+          target: pc.child_id,
+          type: "parentChild",
+          style: { stroke: "#666", strokeWidth: 2 },
+        });
       }
-
-      edges.push({
-        id: `pc-edge-${pc.id}`,
-        source: pc.parent_id,
-        target: pc.child_id,
-        type: "parentChild",
-        style: { stroke: "#666", strokeWidth: 2 },
-      });
     }
 
     return { nodes, edges };

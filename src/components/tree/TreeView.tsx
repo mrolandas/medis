@@ -13,12 +13,16 @@ import "@xyflow/react/dist/style.css";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTreeLayout } from "./useTreeLayout";
 import { PersonNode } from "./PersonNode";
-import { MarriageEdge, ParentChildEdge } from "./CustomEdges";
+import { MarriageEdge, ParentChildEdge, FamilyChildEdge } from "./CustomEdges";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 const nodeTypes = { person: PersonNode };
-const edgeTypes = { marriage: MarriageEdge, parentChild: ParentChildEdge };
+const edgeTypes = {
+  marriage: MarriageEdge,
+  parentChild: ParentChildEdge,
+  familyChild: FamilyChildEdge,
+};
 
 interface TreeViewInnerProps {
   selectedPersonId: string | null;
