@@ -46,17 +46,13 @@ export function useTreeLayout(
       g.setNode(person.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
     }
 
-    // Create a map of marriages for grouping spouses at the same rank
+    // Create a map of marriages by sorted person-pair key
     const marriageMap = new Map<string, string[]>();
     for (const m of marriages) {
-      // Track marriages by sorted person pair key
       const key = [m.person1_id, m.person2_id].sort().join("-");
       if (!marriageMap.has(key)) marriageMap.set(key, []);
       marriageMap.get(key)!.push(m.id);
     }
-
-    // For dagre: don't add spouse edges — we'll align them after layout.
-    // Only add parent→child edges so dagre computes correct ranks.
 
     // Build a lookup: child_id -> marriage id (if both parents are in a marriage)
     const childToMarriageId = new Map<string, string>();
@@ -77,38 +73,52 @@ export function useTreeLayout(
       }
     }
 
-    // Add parent-child edges — connect directly to ONE parent for dagre ranking
-    // (avoids the extra rank that a virtual marriage node creates)
-    const childrenAdded = new Set<string>();
+    // Add ALL parent→child edges so dagre naturally places both parents
+    // at the same rank (both are parents of the same child)
     for (const pc of parentChild) {
-      if (childToMarriageId.has(pc.child_id)) {
-        if (!childrenAdded.has(pc.child_id)) {
-          // Connect child to the first parent for layout purposes
-          g.setEdge(pc.parent_id, pc.child_id, { weight: 1 });
-          childrenAdded.add(pc.child_id);
-        }
-      } else {
-        // Single parent — connect directly
-        g.setEdge(pc.parent_id, pc.child_id, { weight: 1 });
+      g.setEdge(pc.parent_id, pc.child_id, { weight: 1 });
+    }
+
+    // For childless marriages, add a lightweight invisible link so dagre
+    // keeps them at the same rank
+    for (const m of marriages) {
+      const hasSharedChild = parentChild.some(
+        (pc) =>
+          (pc.parent_id === m.person1_id &&
+            parentChild.some(
+              (pc2) =>
+                pc2.child_id === pc.child_id && pc2.parent_id === m.person2_id,
+            )) ||
+          (pc.parent_id === m.person2_id &&
+            parentChild.some(
+              (pc2) =>
+                pc2.child_id === pc.child_id && pc2.parent_id === m.person1_id,
+            )),
+      );
+      if (!hasSharedChild) {
+        // Invisible bidirectional hint for same-rank placement
+        g.setEdge(m.person1_id, m.person2_id, { weight: 0, minlen: 0 });
+        g.setEdge(m.person2_id, m.person1_id, { weight: 0, minlen: 0 });
       }
     }
 
     dagre.layout(g);
 
-    // Post-process: align spouses to the same Y and place them side-by-side
+    // Post-process: place spouses side-by-side at the same Y.
+    // Since both parents have edges to the same children, dagre already
+    // assigns them the same rank (same Y). We only adjust X to pair them.
     for (const m of marriages) {
       const n1 = g.node(m.person1_id);
       const n2 = g.node(m.person2_id);
       if (n1 && n2) {
-        // Use the higher Y (closer to top) for both
+        // Force same Y (should already be equal for parents with shared children)
         const sharedY = Math.min(n1.y, n2.y);
         n1.y = sharedY;
         n2.y = sharedY;
 
-        // Place them side by side if they aren't already close
+        // Place side by side
         const midX = (n1.x + n2.x) / 2;
         const spacing = NODE_WIDTH / 2 + SPOUSE_GAP / 2;
-        // Keep left/right order
         if (n1.x <= n2.x) {
           n1.x = midX - spacing;
           n2.x = midX + spacing;
