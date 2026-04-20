@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import type { PersonInput, Confidence } from "../../types";
 
 interface AddPersonModalProps {
@@ -32,6 +33,7 @@ export function AddPersonModal({
 }: AddPersonModalProps) {
   const { t } = useTranslation();
   const { addPerson } = useTreeData();
+  const isMobile = useIsMobile();
   const [form, setForm] = useState<PersonInput>({ ...defaultPerson });
   const [saving, setSaving] = useState(false);
 
@@ -93,18 +95,19 @@ export function AddPersonModal({
       <div
         style={{
           position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          top: isMobile ? 0 : "50%",
+          left: isMobile ? 0 : "50%",
+          transform: isMobile ? "none" : "translate(-50%, -50%)",
           background: "#fff",
-          borderRadius: 16,
-          padding: "28px 32px",
-          width: 440,
-          maxWidth: "90vw",
-          maxHeight: "85vh",
+          borderRadius: isMobile ? 0 : 16,
+          padding: isMobile ? "20px 16px" : "28px 32px",
+          width: isMobile ? "100%" : 440,
+          maxWidth: isMobile ? "100%" : "90vw",
+          height: isMobile ? "100%" : undefined,
+          maxHeight: isMobile ? "100%" : "85vh",
           overflowY: "auto",
           zIndex: 301,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+          boxShadow: isMobile ? "none" : "0 8px 30px rgba(0,0,0,0.2)",
           fontFamily: "'Segoe UI', system-ui, sans-serif",
         }}
       >

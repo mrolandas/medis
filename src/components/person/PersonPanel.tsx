@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { PersonDetailsForm } from "./PersonDetailsForm";
 import { RelationshipsSection } from "./RelationshipsSection";
 import type { Person } from "../../types";
@@ -20,6 +21,7 @@ export function PersonPanel({
   const { t } = useTranslation();
   const { deletePerson } = useTreeData();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleDelete = useCallback(async () => {
     await deletePerson(person.id);
@@ -31,15 +33,16 @@ export function PersonPanel({
   return (
     <div
       style={{
-        position: "absolute",
+        position: isMobile ? "fixed" : "absolute",
         top: 0,
         right: 0,
-        width: 400,
-        maxWidth: "90vw",
+        left: isMobile ? 0 : undefined,
+        width: isMobile ? "100%" : 400,
+        maxWidth: isMobile ? "100%" : "90vw",
         height: "100%",
         background: "#ffffff",
-        boxShadow: "-4px 0 20px rgba(0,0,0,0.12)",
-        zIndex: 100,
+        boxShadow: isMobile ? "none" : "-4px 0 20px rgba(0,0,0,0.12)",
+        zIndex: isMobile ? 200 : 100,
         display: "flex",
         flexDirection: "column",
         fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -51,29 +54,58 @@ export function PersonPanel({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 20px",
+          padding: isMobile ? "12px 16px" : "16px 20px",
           borderBottom: "2px solid #ecf0f1",
           flexShrink: 0,
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 22, color: "#2d3436" }}>
+        {isMobile && (
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 24,
+              cursor: "pointer",
+              color: "#636e72",
+              padding: "0 8px 0 0",
+              lineHeight: 1,
+            }}
+            title={t("action.close")}
+          >
+            ←
+          </button>
+        )}
+        <h2
+          style={{
+            margin: 0,
+            fontSize: isMobile ? 19 : 22,
+            color: "#2d3436",
+            flex: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {displayName}
         </h2>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            fontSize: 28,
-            cursor: "pointer",
-            color: "#636e72",
-            padding: "0 4px",
-            lineHeight: 1,
-          }}
-          title={t("action.close")}
-        >
-          ×
-        </button>
+        {!isMobile && (
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 28,
+              cursor: "pointer",
+              color: "#636e72",
+              padding: "0 4px",
+              lineHeight: 1,
+            }}
+            title={t("action.close")}
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {/* Scrollable body */}

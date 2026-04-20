@@ -4,9 +4,10 @@ import { useTranslation } from "../../hooks/useTranslation";
 
 interface SearchBarProps {
   onSelectPerson: (id: string) => void;
+  fullWidth?: boolean;
 }
 
-export function SearchBar({ onSelectPerson }: SearchBarProps) {
+export function SearchBar({ onSelectPerson, fullWidth }: SearchBarProps) {
   const { t } = useTranslation();
   const { people } = useTreeData();
   const [query, setQuery] = useState("");
@@ -65,7 +66,10 @@ export function SearchBar({ onSelectPerson }: SearchBarProps) {
   );
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: 280 }}>
+    <div
+      ref={containerRef}
+      style={{ position: "relative", width: fullWidth ? "100%" : 280 }}
+    >
       <input
         type="text"
         value={query}
