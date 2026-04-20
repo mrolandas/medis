@@ -153,9 +153,32 @@ function PersonNodeComponent({ data }: NodeProps) {
           {lifespan(person)}
         </div>
 
-        {/* Deceased indicator */}
+        {/* Deceased ribbon — dark diagonal line across top-right corner */}
         {person.is_deceased && (
-          <div style={{ fontSize: 11, color: "#95a5a6", marginTop: 1 }}>†</div>
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: 28,
+              height: 28,
+              overflow: "hidden",
+              borderTopRightRadius: 10,
+              pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 5,
+                right: -8,
+                width: 40,
+                height: 3,
+                background: "#555",
+                transform: "rotate(45deg)",
+              }}
+            />
+          </div>
         )}
       </div>
       <Handle
