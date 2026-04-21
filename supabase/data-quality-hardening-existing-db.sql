@@ -4,6 +4,17 @@ begin
     select 1
     from information_schema.columns
     where table_schema = 'public'
+      and table_name = 'people'
+      and column_name = 'middle_name'
+  ) then
+    alter table people
+      add column middle_name text;
+  end if;
+
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
       and table_name = 'marriages'
       and column_name = 'relationship_status'
   ) then
@@ -46,6 +57,14 @@ begin
     alter table people
       add constraint people_last_name_len_chk
       check (last_name is null or char_length(trim(last_name)) <= 120) not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'people_middle_name_len_chk'
+  ) then
+    alter table people
+      add constraint people_middle_name_len_chk
+      check (middle_name is null or char_length(trim(middle_name)) <= 120) not valid;
   end if;
 
   if not exists (

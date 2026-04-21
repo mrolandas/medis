@@ -155,6 +155,15 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
         placeholder={t("person.lastName")}
       />
 
+      {/* Middle name */}
+      <label style={labelStyle}>{t("person.middleName")}</label>
+      <input
+        style={inputStyle}
+        value={(val("middle_name") as string) ?? ""}
+        onChange={(e) => handleChange("middle_name", e.target.value || null)}
+        placeholder={t("person.middleName")}
+      />
+
       {/* Maiden name — only for females */}
       {val("gender") !== "M" && (
         <>

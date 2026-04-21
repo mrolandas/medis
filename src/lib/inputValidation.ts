@@ -37,6 +37,7 @@ export function sanitizePersonInput<T extends Partial<PersonInput>>(
 
   const textFields: Array<keyof PersonInput> = [
     "first_name",
+    "middle_name",
     "last_name",
     "maiden_name",
     "birth_place",

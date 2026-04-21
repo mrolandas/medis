@@ -21,6 +21,7 @@ const lt = {
 
   // Person fields
   "person.firstName": "Vardas",
+  "person.middleName": "Antras vardas",
   "person.lastName": "Pavardė",
   "person.maidenName": "Mergautinė pavardė",
   "person.gender": "Lytis",

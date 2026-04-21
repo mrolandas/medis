@@ -35,8 +35,12 @@ type SortKey =
 
 type SortDirection = "asc" | "desc";
 
-function fullName(firstName: string, lastName: string | null): string {
-  return `${firstName} ${lastName ?? ""}`.trim();
+function fullName(
+  firstName: string,
+  middleName: string | null,
+  lastName: string | null,
+): string {
+  return `${firstName} ${middleName ?? ""} ${lastName ?? ""}`.trim();
 }
 
 function formatShortDate(value: string | null | undefined): string {
@@ -89,6 +93,18 @@ function formatConfidenceLt(confidence: unknown): string {
   return String(confidence);
 }
 
+function isFormerRelationship(relationship: {
+  relationship_status?: string | null;
+  divorce_date?: string | null;
+}): boolean {
+  const status = relationship.relationship_status?.trim().toLocaleLowerCase();
+  return (
+    status === "divorced" ||
+    status === "widowed" ||
+    Boolean(relationship.divorce_date)
+  );
+}
+
 export function FamilyMembersModal({
   onClose,
   onEditPerson,
@@ -129,10 +145,14 @@ export function FamilyMembersModal({
 
       spouseNamesByPerson
         .get(person1.id)!
-        .push(fullName(person2.first_name, person2.last_name));
+        .push(
+          fullName(person2.first_name, person2.middle_name, person2.last_name),
+        );
       spouseNamesByPerson
         .get(person2.id)!
-        .push(fullName(person1.first_name, person1.last_name));
+        .push(
+          fullName(person1.first_name, person1.middle_name, person1.last_name),
+        );
     }
 
     for (const relation of parentChild) {
@@ -149,10 +169,12 @@ export function FamilyMembersModal({
 
         parentNamesByChild
           .get(child.id)!
-          .push(fullName(parent.first_name, parent.last_name));
+          .push(
+            fullName(parent.first_name, parent.middle_name, parent.last_name),
+          );
         childNamesByParent
           .get(parent.id)!
-          .push(fullName(child.first_name, child.last_name));
+          .push(fullName(child.first_name, child.middle_name, child.last_name));
       }
     }
 
@@ -291,10 +313,12 @@ export function FamilyMembersModal({
 
       parentsByChild
         .get(child.id)!
-        .push(fullName(parent.first_name, parent.last_name));
+        .push(
+          fullName(parent.first_name, parent.middle_name, parent.last_name),
+        );
       childrenByParent
         .get(parent.id)!
-        .push(fullName(child.first_name, child.last_name));
+        .push(fullName(child.first_name, child.middle_name, child.last_name));
     }
 
     const spousesByPerson = new Map<string, string[]>();
@@ -306,16 +330,22 @@ export function FamilyMembersModal({
       if (!spousesByPerson.has(left.id)) spousesByPerson.set(left.id, []);
       if (!spousesByPerson.has(right.id)) spousesByPerson.set(right.id, []);
 
+      const formerTag = isFormerRelationship(marriage) ? " (x)" : "";
       spousesByPerson
         .get(left.id)!
-        .push(fullName(right.first_name, right.last_name));
+        .push(
+          `${fullName(right.first_name, right.middle_name, right.last_name)}${formerTag}`,
+        );
       spousesByPerson
         .get(right.id)!
-        .push(fullName(left.first_name, left.last_name));
+        .push(
+          `${fullName(left.first_name, left.middle_name, left.last_name)}${formerTag}`,
+        );
     }
 
     return people.map((person) => ({
       first_name: person.first_name,
+      middle_name: person.middle_name ?? "",
       last_name: person.last_name ?? "",
       maiden_name: person.maiden_name ?? "",
       gender: formatGenderShort(person.gender),
@@ -345,6 +375,7 @@ export function FamilyMembersModal({
 
   const exportColumns = [
     { key: "first_name", label: "Vardas" },
+    { key: "middle_name", label: "Antras vardas" },
     { key: "last_name", label: "Pavardė" },
     { key: "maiden_name", label: "Mergautinė pavardė" },
     { key: "gender", label: "Lytis" },

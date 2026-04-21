@@ -15,6 +15,7 @@ interface AddPersonModalProps {
 
 const defaultPerson: PersonInput = {
   first_name: "",
+  middle_name: null,
   last_name: null,
   maiden_name: null,
   gender: null,
@@ -48,12 +49,14 @@ export function AddPersonModal({
   const selectablePeople = useMemo(
     () =>
       [...people].sort((a, b) => {
-        const left = `${a.first_name} ${a.last_name ?? ""}`
-          .trim()
-          .toLocaleLowerCase("lt");
-        const right = `${b.first_name} ${b.last_name ?? ""}`
-          .trim()
-          .toLocaleLowerCase("lt");
+        const left =
+          `${a.first_name} ${a.middle_name ?? ""} ${a.last_name ?? ""}`
+            .trim()
+            .toLocaleLowerCase("lt");
+        const right =
+          `${b.first_name} ${b.middle_name ?? ""} ${b.last_name ?? ""}`
+            .trim()
+            .toLocaleLowerCase("lt");
         if (left < right) return -1;
         if (left > right) return 1;
         return a.id.localeCompare(b.id);
@@ -65,7 +68,7 @@ export function AddPersonModal({
     (id: string) => {
       const person = people.find((p) => p.id === id);
       if (!person) return "?";
-      return `${person.first_name} ${person.last_name ?? ""}`.trim();
+      return `${person.first_name} ${person.middle_name ?? ""} ${person.last_name ?? ""}`.trim();
     },
     [people],
   );
@@ -223,6 +226,16 @@ export function AddPersonModal({
               {nameError}
             </div>
           )}
+
+          <label style={labelStyle}>{t("person.middleName")}</label>
+          <input
+            style={inputStyle}
+            value={form.middle_name ?? ""}
+            onChange={(e) =>
+              handleChange("middle_name", e.target.value || null)
+            }
+            placeholder={t("person.middleName")}
+          />
 
           <label style={labelStyle}>{t("person.lastName")}</label>
           <input

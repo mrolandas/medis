@@ -20,7 +20,7 @@ export function SearchBar({ onSelectPerson, fullWidth }: SearchBarProps) {
     query.length >= 2
       ? people.filter((p) => {
           const fullName =
-            `${p.first_name} ${p.last_name ?? ""} ${p.maiden_name ?? ""}`.toLowerCase();
+            `${p.first_name} ${p.middle_name ?? ""} ${p.last_name ?? ""} ${p.maiden_name ?? ""}`.toLowerCase();
           return fullName.includes(query.toLowerCase());
         })
       : [];
@@ -125,7 +125,8 @@ export function SearchBar({ onSelectPerson, fullWidth }: SearchBarProps) {
               }}
             >
               <span style={{ fontWeight: 600, color: "#2d3436" }}>
-                {person.first_name} {person.last_name ?? ""}
+                {person.first_name} {person.middle_name ?? ""}{" "}
+                {person.last_name ?? ""}
               </span>
               {person.birth_date && (
                 <span style={{ color: "#7f8c8d", marginLeft: 8, fontSize: 13 }}>

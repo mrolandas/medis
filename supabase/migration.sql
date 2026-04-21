@@ -12,6 +12,7 @@ create extension if not exists "pgcrypto";
 create table people (
   id uuid primary key default uuid_generate_v4(),
   first_name text not null check (char_length(trim(first_name)) between 1 and 120),
+  middle_name text check (middle_name is null or char_length(trim(middle_name)) <= 120),
   last_name text check (last_name is null or char_length(trim(last_name)) <= 120),
   maiden_name text check (maiden_name is null or char_length(trim(maiden_name)) <= 120),
   gender text check (gender in ('M', 'F')),

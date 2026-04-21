@@ -3,6 +3,7 @@
 export interface Person {
   id: string;
   first_name: string;
+  middle_name: string | null;
   last_name: string | null;
   maiden_name: string | null;
   gender: "M" | "F" | null;

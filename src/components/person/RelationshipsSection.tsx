@@ -53,7 +53,7 @@ export function RelationshipsSection({
     (id: string) => {
       const p = people.find((x) => x.id === id);
       if (!p) return "?";
-      return `${p.first_name} ${p.last_name ?? ""}`.trim();
+      return `${p.first_name} ${p.middle_name ?? ""} ${p.last_name ?? ""}`.trim();
     },
     [people],
   );
@@ -174,7 +174,7 @@ export function RelationshipsSection({
         <option value="">{t("action.selectPerson")}</option>
         {availablePeople.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.first_name} {p.last_name ?? ""}
+            {p.first_name} {p.middle_name ?? ""} {p.last_name ?? ""}
           </option>
         ))}
       </select>

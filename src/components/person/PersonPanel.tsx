@@ -28,7 +28,8 @@ export function PersonPanel({
     onClose();
   }, [deletePerson, person.id, onClose]);
 
-  const displayName = `${person.first_name} ${person.last_name ?? ""}`.trim();
+  const displayName =
+    `${person.first_name} ${person.middle_name ?? ""} ${person.last_name ?? ""}`.trim();
 
   return (
     <div

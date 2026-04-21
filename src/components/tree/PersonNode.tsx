@@ -77,9 +77,11 @@ const CONFIDENCE_TITLES_LT: Record<Confidence, string> = {
 function PersonNodeComponent({ data }: NodeProps) {
   const { person, isSelected, isHighlighted, isFocused, isDimmed } =
     data as PersonNodeData;
+  const coreName =
+    `${person.first_name} ${person.middle_name ?? ""} ${person.last_name ?? ""}`.trim();
   const displayName = person.maiden_name
-    ? `${person.first_name} ${person.last_name ?? ""} (${person.maiden_name})`
-    : `${person.first_name} ${person.last_name ?? ""}`;
+    ? `${coreName} (${person.maiden_name})`
+    : coreName;
 
   const glowing = isSelected || isHighlighted || isFocused;
 
