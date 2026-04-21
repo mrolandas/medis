@@ -15,6 +15,16 @@ interface PersonNodeData {
 /** Formats a partial date for display: "1850" | "1850-03" | "1850-03-15" */
 function formatDate(date: string | null): string {
   if (!date) return "?";
+  const normalized = date.trim().toLocaleLowerCase("lt");
+  if (
+    normalized === "" ||
+    normalized === "unknown" ||
+    normalized === "nezinoma" ||
+    normalized === "nežinoma" ||
+    normalized === "?"
+  ) {
+    return "?";
+  }
   // If it's just a year
   if (/^\d{4}$/.test(date)) return date;
   // If year-month
@@ -55,6 +65,13 @@ const CONFIDENCE_LABELS: Record<Confidence, string> = {
   probable: "~",
   uncertain: "?",
   legendary: "★",
+};
+
+const CONFIDENCE_TITLES_LT: Record<Confidence, string> = {
+  confirmed: "Patvirtinta",
+  probable: "Tikėtina",
+  uncertain: "Neaišku",
+  legendary: "Legenda",
 };
 
 function PersonNodeComponent({ data }: NodeProps) {
@@ -133,7 +150,7 @@ function PersonNodeComponent({ data }: NodeProps) {
               fontSize: 13,
               fontWeight: "bold",
             }}
-            title={person.confidence}
+            title={CONFIDENCE_TITLES_LT[person.confidence]}
           >
             {CONFIDENCE_LABELS[person.confidence]}
           </span>
