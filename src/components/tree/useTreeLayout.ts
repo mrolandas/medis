@@ -481,8 +481,6 @@ export function useTreeLayout(
       }
     }
 
-    const originalIndegree = new Map(indegree);
-
     const groupLevel = new Map<string, number>();
     for (const g of indegree.keys()) groupLevel.set(g, 0);
 
@@ -503,17 +501,14 @@ export function useTreeLayout(
       }
     }
 
-    // Reverse relaxation: for non-root groups only, push parents down so they
-    // sit exactly one row above the deepest child already placed. Root groups
-    // (those with no incoming parent edges in the DAG) are exempt — they must
-    // stay at level 0 regardless of how deep their in-law descendants are.
-    const rootGroups = new Set<string>();
-    for (const [g, deg] of originalIndegree) {
-      if (deg === 0) rootGroups.add(g);
-    }
+    // Reverse relaxation: push parents down so they sit exactly one row above
+    // the deepest child already placed.
+    //
+    // This must apply to all groups, including DAG roots. Otherwise a parent
+    // with unknown ancestors can stay pinned to the top row even when their
+    // child is many generations lower through the other parent's lineage.
     for (let index = topoOrder.length - 1; index >= 0; index -= 1) {
       const g = topoOrder[index];
-      if (rootGroups.has(g)) continue; // never move root groups down
       let desired = groupLevel.get(g) ?? 0;
       for (const ch of groupAdj.get(g) ?? []) {
         desired = Math.max(desired, (groupLevel.get(ch) ?? 0) - 1);
