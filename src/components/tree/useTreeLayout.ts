@@ -790,16 +790,51 @@ export function useTreeLayout(
 
     // Helper lookups for edge building
     const childToMarriageId = new Map<string, string>();
-    for (const m of sortedMarriages) {
-      const children1 = new Set(
-        sortedParentChild
-          .filter((pc) => pc.parent_id === m.person1_id)
-          .map((pc) => pc.child_id),
-      );
-      for (const pc of sortedParentChild) {
-        if (pc.parent_id === m.person2_id && children1.has(pc.child_id)) {
-          childToMarriageId.set(pc.child_id, m.id);
+
+    const parentsByChild = new Map<string, Set<string>>();
+    for (const pc of sortedParentChild) {
+      if (!parentsByChild.has(pc.child_id)) {
+        parentsByChild.set(pc.child_id, new Set());
+      }
+      parentsByChild.get(pc.child_id)!.add(pc.parent_id);
+    }
+
+    // In complex/divorce graphs a child can match multiple spouse pairs.
+    // Attach the child to the visually closest valid pair to reduce long
+    // stretched forks and edge crossings.
+    for (const [childId, parents] of parentsByChild) {
+      const childPos = positions.get(childId);
+      if (!childPos) continue;
+
+      let bestMarriageId: string | null = null;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      for (const marriage of sortedMarriages) {
+        if (
+          !parents.has(marriage.person1_id) ||
+          !parents.has(marriage.person2_id)
+        ) {
+          continue;
         }
+
+        const p1 = positions.get(marriage.person1_id);
+        const p2 = positions.get(marriage.person2_id);
+        if (!p1 || !p2) continue;
+
+        const midX = (p1.x + p2.x) / 2;
+        const parentRowY = (p1.y + p2.y) / 2;
+        const score =
+          Math.abs(midX - childPos.x) +
+          0.35 * Math.abs(parentRowY - childPos.y);
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestMarriageId = marriage.id;
+        }
+      }
+
+      if (bestMarriageId) {
+        childToMarriageId.set(childId, bestMarriageId);
       }
     }
     const marriageChildren = new Map<string, string[]>();
