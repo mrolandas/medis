@@ -12,6 +12,22 @@ interface PersonDetailsFormProps {
   person: Person;
 }
 
+function isUnknownDateValue(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLocaleLowerCase("lt");
+  return (
+    normalized === "unknown" ||
+    normalized === "nezinoma" ||
+    normalized === "nežinoma" ||
+    normalized === "?"
+  );
+}
+
+function toDateInputValue(value: string | null | undefined): string {
+  if (!value || isUnknownDateValue(value)) return "";
+  return value;
+}
+
 /** Debounced auto-save form for all person fields */
 export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
   const { t } = useTranslation();
@@ -109,6 +125,11 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
     marginTop: 16,
   };
 
+  const birthDateValue = toDateInputValue(val("birth_date") as string | null);
+  const deathDateRaw = val("death_date") as string | null;
+  const deathDateValue = toDateInputValue(deathDateRaw);
+  const showDeathFields = Boolean(val("is_deceased")) || deathDateValue !== "";
+
   return (
     <div style={{ padding: "0 4px" }}>
       {/* First name — required */}
@@ -165,7 +186,7 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
       <label style={labelStyle}>{t("person.birthDate")}</label>
       <input
         style={inputStyle}
-        value={(val("birth_date") as string) ?? ""}
+        value={birthDateValue}
         onChange={(e) => handleChange("birth_date", e.target.value || null)}
         placeholder={t("date.hint")}
       />
@@ -204,12 +225,12 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
       </label>
 
       {/* Death date — only show if deceased */}
-      {(val("is_deceased") || val("death_date")) && (
+      {showDeathFields && (
         <>
           <label style={labelStyle}>{t("person.deathDate")}</label>
           <input
             style={inputStyle}
-            value={(val("death_date") as string) ?? ""}
+            value={deathDateValue}
             onChange={(e) => handleChange("death_date", e.target.value || null)}
             placeholder={t("date.hint")}
           />
