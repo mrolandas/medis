@@ -74,21 +74,17 @@ function formatGenderShort(gender: string | null | undefined): string {
 function formatConfidenceLt(confidence: unknown): string {
   if (confidence === null || confidence === undefined) return "";
 
-  if (typeof confidence === "number") {
-    if (confidence <= 1) return "žemas";
-    if (confidence <= 2) return "vidutinis";
-    return "aukštas";
-  }
-
   const normalized = String(confidence).trim().toLocaleLowerCase("lt");
   if (!normalized) return "";
 
-  if (["low", "žemas", "zemas"].includes(normalized)) return "žemas";
-  if (["medium", "vidutinis"].includes(normalized)) return "vidutinis";
-  if (["high", "aukštas", "aukstas"].includes(normalized)) return "aukštas";
-  if (["unknown", "nežinoma", "nezinoma"].includes(normalized)) {
-    return "nežinoma";
+  if (["confirmed", "patvirtinta"].includes(normalized)) return "Patvirtinta";
+  if (["probable", "tikėtina", "tiketina"].includes(normalized)) {
+    return "Tikėtina";
   }
+  if (["uncertain", "neaišku", "neaisku"].includes(normalized)) {
+    return "Neaišku";
+  }
+  if (["legendary", "legenda"].includes(normalized)) return "Legenda";
 
   return String(confidence);
 }
