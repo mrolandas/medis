@@ -585,6 +585,24 @@ export function useTreeLayout(
         }
       }
 
+      // Also keep biological co-parents together horizontally even without
+      // a marriage record (e.g. divorced or unknown-spouse data entry).
+      const parentsByChild = new Map<string, string[]>();
+      for (const pc of sortedParentChild) {
+        if (!rowSet.has(pc.parent_id) || !positions.has(pc.child_id)) continue;
+        if (!parentsByChild.has(pc.child_id))
+          parentsByChild.set(pc.child_id, []);
+        parentsByChild.get(pc.child_id)!.push(pc.parent_id);
+      }
+      for (const parentIds of parentsByChild.values()) {
+        const uniq = [...new Set(parentIds)].sort(comparePersonIds);
+        for (let i = 0; i < uniq.length; i += 1) {
+          for (let j = i + 1; j < uniq.length; j += 1) {
+            spouseUnion(uniq[i], uniq[j]);
+          }
+        }
+      }
+
       const groups = new Map<string, string[]>();
       for (const id of ids) {
         const root = spouseFind(id);
