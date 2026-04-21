@@ -37,9 +37,10 @@ export function AddPersonModal({
   onPersonAdded,
 }: AddPersonModalProps) {
   const { t } = useTranslation();
-  const { people, addPerson, addParentChild } = useTreeData();
+  const { people, addPerson, addParentChild, addMarriage } = useTreeData();
   const isMobile = useIsMobile();
   const [form, setForm] = useState<PersonInput>({ ...defaultPerson });
+  const [selectedSpouseIds, setSelectedSpouseIds] = useState<string[]>([]);
   const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -88,6 +89,12 @@ export function AddPersonModal({
     setSelectedParentIds((prev) => prev.filter((value) => value !== id));
   }, []);
 
+  const toggleSpouse = useCallback((id: string) => {
+    setSelectedSpouseIds((prev) =>
+      prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id],
+    );
+  }, []);
+
   const handleChange = useCallback(
     (key: keyof PersonInput, value: string | boolean | null) => {
       setForm((prev) => ({ ...prev, [key]: value }));
@@ -128,6 +135,20 @@ export function AddPersonModal({
       try {
         const person = await addPerson(normalized);
         if (person) {
+          await Promise.all(
+            selectedSpouseIds.map((spouseId, index) =>
+              addMarriage({
+                person1_id: person.id,
+                person2_id: spouseId,
+                relationship_status: "married",
+                marriage_date: null,
+                divorce_date: null,
+                marriage_place: null,
+                order_index: index,
+              }),
+            ),
+          );
+
           await Promise.all([
             ...selectedParentIds.map((parentId) =>
               addParentChild(parentId, person.id),
@@ -148,6 +169,8 @@ export function AddPersonModal({
       form,
       addPerson,
       addParentChild,
+      addMarriage,
+      selectedSpouseIds,
       selectedParentIds,
       selectedChildIds,
       onPersonAdded,
@@ -268,6 +291,45 @@ export function AddPersonModal({
               {birthDateError}
             </div>
           )}
+
+          <label style={labelStyle}>{t("relation.spouses")}</label>
+          <div
+            style={{
+              ...inputStyle,
+              padding: "8px 10px",
+              minHeight: 80,
+              maxHeight: 140,
+              overflowY: "auto",
+            }}
+          >
+            {selectablePeople.length === 0 ? (
+              <div style={{ color: "#7f8c8d", fontSize: 14 }}>
+                {t("familyMembers.none")}
+              </div>
+            ) : (
+              selectablePeople.map((person) => (
+                <label
+                  key={`spouse-${person.id}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 14,
+                    color: "#2d3436",
+                    padding: "4px 0",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSpouseIds.includes(person.id)}
+                    onChange={() => toggleSpouse(person.id)}
+                  />
+                  {personLabel(person.id)}
+                </label>
+              ))
+            )}
+          </div>
 
           <label style={labelStyle}>{t("relation.parents")}</label>
           <div

@@ -9,7 +9,7 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Interactive family tree view
 - Person detail panel for editing records
 - Relationship editing for parents, children, and spouses
-- Create-person modal can link parents and children immediately on first save
+- Create-person modal can link spouses, parents, and children immediately on first save
 - Supabase-backed data storage
 - Session-based password gate with DB-enforced access policy
 - Progressive login cooldown after failed attempts (anti-guessing throttle)

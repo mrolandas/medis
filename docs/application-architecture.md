@@ -57,7 +57,7 @@ The runtime structure is:
 
 - Person editing and relationship editing UI.
 - `PersonPanel` + details form + relationship management controls.
-- Create modal can establish parent/child links immediately at person creation.
+- Create modal can establish spouse/parent/child links immediately at person creation.
 - Relationship editor supports spouse status (`married`, `divorced`, `widowed`).
 
 8. `src/components/common/FamilyMembersModal.tsx`
