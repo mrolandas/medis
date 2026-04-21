@@ -9,16 +9,20 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Interactive family tree view
 - Person detail panel for editing records
 - Relationship editing for parents, children, and spouses
+- Create-person modal can link parents and children immediately on first save
 - Supabase-backed data storage
 - Session-based password gate with DB-enforced access policy
 - Progressive login cooldown after failed attempts (anti-guessing throttle)
 - Focus and highlight mode for lineage browsing
 - Custom edge rendering for marriages and parent-child relationships
+- Former partner relationships (divorced/widowed) rendered as faint dotted links with a center marker
 - Tree controls (zoom/fit) pinned to top-left on desktop and mobile
 - Family list modal (`Sąrašas`) with sortable columns and export to CSV/PDF
 - Deterministic, stable layout — tree structure does not shift when relationships are added or removed
-- Correct generational row assignment via topological sort of the parent→child DAG (spouses share a row; root couples are never displaced by in-law descendants)
-- Family fork edges handle children that span multiple rows (e.g. a sibling who married into a different generation)
+- Correct generational row assignment via topological sort of the parent→child DAG
+- Child-to-couple fork attachment selects the visually closest valid parent pair in complex/divorce graphs
+- Co-parents are grouped horizontally even without an explicit marriage record
+- Row spacing distinguishes active couples from former/co-parent-only pairs
 
 ## Tech Stack
 
@@ -63,9 +67,12 @@ where id = true;
 
 The client sends the entered password via request header (`x-medis-password`), and RLS policies allow reads/writes only when `medis_is_authorized()` succeeds.
 
-For an already populated database, run the SQL from `supabase/data-quality-hardening-existing-db.sql` in Supabase SQL Editor.
+For an already populated database, run `supabase/data-quality-hardening-existing-db.sql` in Supabase SQL Editor.
 
-This adds guardrails for date formats and key text-field lengths without deleting existing rows.
+This script:
+
+- adds guardrails for date formats and key text-field lengths without deleting existing rows
+- adds and backfills `marriages.relationship_status` for existing data
 
 Accepted partial date values:
 
@@ -100,6 +107,12 @@ The app works with three main Supabase tables:
 - `marriages`
 - `parent_child`
 
+`marriages.relationship_status` supports:
+
+- `married`
+- `divorced`
+- `widowed`
+
 The client loads all three datasets on startup and keeps a local in-memory view for layout and UI interactions.
 
 ## Project Structure
@@ -131,8 +144,8 @@ Important files:
 - Login attempts are progressively throttled client-side after failed attempts (exponential cooldown with cap).
 - Person inputs are normalized before save (trimming/empty normalization/date normalization).
 - The visual layout is custom and optimized for genealogy-specific constraints rather than generic graph layout.
-- `relatives-tree` is used to derive initial X positions. Y (generational row) is fully overridden by a topological sort so that root couples always appear at row 0 and no child can appear at the same row as or above their parents.
-- Family fork edges always extend their horizontal bar to include the couple's midpoint (`stemX`), so the stem is never left floating when all children are on one side of the couple.
+- `relatives-tree` is used to derive initial X positions.
+- Y (generational row) is overridden by parent→child generation logic so no child appears above a parent.
 
 ## Architecture Docs
 

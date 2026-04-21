@@ -57,6 +57,8 @@ The runtime structure is:
 
 - Person editing and relationship editing UI.
 - `PersonPanel` + details form + relationship management controls.
+- Create modal can establish parent/child links immediately at person creation.
+- Relationship editor supports spouse status (`married`, `divorced`, `widowed`).
 
 8. `src/components/common/FamilyMembersModal.tsx`
 
@@ -90,6 +92,11 @@ Primary tables:
 - `people`
 - `marriages`
 - `parent_child`
+
+Marriage semantics:
+
+- `marriages.relationship_status` indicates current/former relationship type.
+- `divorce_date` can still hold historical date details when relevant.
 
 Graph semantics:
 
@@ -133,6 +140,11 @@ The tree must always be built from current live data, never from hardcoded assum
 - Parent-child direction determines vertical generation levels.
 - Spousal groups should stay aligned by generation rules.
 
+7. Horizontal intent cues must stay readable.
+
+- Current couples should remain visually tighter than former/co-parent-only pairings.
+- Former partner links should remain visible but de-emphasized.
+
 ### Practical guidance for future code changes
 
 When changing `useTreeLayout`:
@@ -145,6 +157,12 @@ When changing `useTreeLayout`:
   - multi-root families connected by marriage,
   - missing/partial relationship sets,
   - large sibling groups.
+  - divorced/widowed co-parent scenarios where one parent is added later.
+
+When changing custom edge rendering:
+
+- Keep active marriages and former relationships visually distinct.
+- Preserve low visual prominence for former links so active family structures remain primary.
 
 ## Data Safety and Concurrency
 
