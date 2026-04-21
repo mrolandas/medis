@@ -611,13 +611,6 @@ export function useTreeLayout(
         const avgX =
           members.reduce((sum, id) => sum + (positions.get(id)?.x ?? 0), 0) /
           members.length;
-        const anchorX =
-          parentIds.length > 0
-            ? parentIds.reduce(
-                (sum, id) => sum + (positions.get(id)?.x ?? 0),
-                0,
-              ) / parentIds.length
-            : avgX;
 
         const directChildIds = [
           ...new Set(
@@ -629,6 +622,27 @@ export function useTreeLayout(
               .map((pc) => pc.child_id),
           ),
         ].sort(comparePersonIds);
+
+        const parentAnchorX =
+          parentIds.length > 0
+            ? parentIds.reduce(
+                (sum, id) => sum + (positions.get(id)?.x ?? 0),
+                0,
+              ) / parentIds.length
+            : null;
+        const childAnchorX =
+          directChildIds.length > 0
+            ? directChildIds.reduce(
+                (sum, id) => sum + (positions.get(id)?.x ?? 0),
+                0,
+              ) / directChildIds.length
+            : null;
+
+        // For root parent groups (no known parents), prefer anchoring around
+        // their children to avoid pulling children across the canvas when a
+        // new parent is added later.
+        const preferredCenterX = parentAnchorX ?? childAnchorX ?? avgX;
+
         const ownSpan = (members.length - 1) * MIN_CENTER_GAP;
         const childSpan = Math.max(
           0,
@@ -638,8 +652,8 @@ export function useTreeLayout(
         return {
           members,
           avgX,
-          anchorX,
-          preferredCenterX: parentIds.length > 0 ? anchorX : avgX,
+          anchorX: parentAnchorX ?? avgX,
+          preferredCenterX,
           effectiveSpan:
             Math.max(ownSpan, childSpan) +
             (parentIds.length > 0 || directChildIds.length > 0
