@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useTranslation } from "../../hooks/useTranslation";
 import { AUTH_PASSWORD_SESSION_KEY } from "../../lib/supabase";
@@ -14,9 +14,20 @@ interface AuthGateProps {
 /** Simple session-based password gate. Persists in sessionStorage (cleared on tab close). */
 export function AuthGate({ children }: AuthGateProps) {
   const { t } = useTranslation();
-  const [authenticated, setAuthenticated] = useState(
-    () => sessionStorage.getItem(SESSION_KEY) === "true",
-  );
+  const [authenticated, setAuthenticated] = useState(() => {
+    const hasSessionFlag = sessionStorage.getItem(SESSION_KEY) === "true";
+    const hasPasswordToken = !!sessionStorage.getItem(
+      AUTH_PASSWORD_SESSION_KEY,
+    );
+
+    // Backward compatibility: clear stale sessions from older auth flow.
+    if (hasSessionFlag && !hasPasswordToken) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+
+    return hasSessionFlag && hasPasswordToken;
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +77,18 @@ export function AuthGate({ children }: AuthGateProps) {
     },
     [password, validatePassword],
   );
+
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const hasPasswordToken = !!sessionStorage.getItem(
+      AUTH_PASSWORD_SESSION_KEY,
+    );
+    if (hasPasswordToken) return;
+
+    sessionStorage.removeItem(SESSION_KEY);
+    setAuthenticated(false);
+  }, [authenticated]);
 
   if (authenticated) {
     return <>{children}</>;

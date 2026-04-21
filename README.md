@@ -10,7 +10,7 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Person detail panel for editing records
 - Relationship editing for parents, children, and spouses
 - Supabase-backed data storage
-- Session-based password gate for the UI
+- Session-based password gate with DB-enforced access policy
 - Focus and highlight mode for lineage browsing
 - Custom edge rendering for marriages and parent-child relationships
 - Deterministic, stable layout — tree structure does not shift when relationships are added or removed
@@ -43,22 +43,36 @@ Required variables:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
-VITE_APP_PASSWORD=your-password-here
 ```
 
-### 3. Start the development server
+### 3. Apply Supabase migration and set the app password hash
+
+Run `supabase/migration.sql` in Supabase SQL Editor.
+
+Then set your real app password hash in `app_settings` (replace `YOUR_STRONG_PASSWORD`):
+
+```sql
+update app_settings
+set app_password_hash = crypt('YOUR_STRONG_PASSWORD', gen_salt('bf')),
+    updated_at = now()
+where id = true;
+```
+
+The client sends the entered password via request header (`x-medis-password`), and RLS policies allow reads/writes only when `medis_is_authorized()` succeeds.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
 ```
 
-### 4. Build for production
+### 5. Build for production
 
 ```bash
 npm run build
 ```
 
-### 5. Preview the production build
+### 6. Preview the production build
 
 ```bash
 npm run preview
@@ -103,3 +117,9 @@ Important files:
 - The visual layout is custom and optimized for genealogy-specific constraints rather than generic graph layout.
 - `relatives-tree` is used to derive initial X positions. Y (generational row) is fully overridden by a topological sort so that root couples always appear at row 0 and no child can appear at the same row as or above their parents.
 - Family fork edges always extend their horizontal bar to include the couple's midpoint (`stemX`), so the stem is never left floating when all children are on one side of the couple.
+
+## Architecture Docs
+
+Detailed architecture and maintenance guidance is documented in:
+
+- `docs/application-architecture.md`
