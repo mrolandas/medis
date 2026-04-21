@@ -40,14 +40,31 @@ export function Header({
             height: 52,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              minWidth: 0,
+              flex: 1,
+            }}
+          >
             <span style={{ fontSize: 22, lineHeight: 1 }}>🌳</span>
-            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 17,
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {t("app.title")}
             </h1>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {saveStatus !== "idle" && (
               <span
                 style={{

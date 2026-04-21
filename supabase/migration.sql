@@ -11,18 +11,24 @@ create extension if not exists "pgcrypto";
 
 create table people (
   id uuid primary key default uuid_generate_v4(),
-  first_name text not null,
-  last_name text,
-  maiden_name text,
+  first_name text not null check (char_length(trim(first_name)) between 1 and 120),
+  last_name text check (last_name is null or char_length(trim(last_name)) <= 120),
+  maiden_name text check (maiden_name is null or char_length(trim(maiden_name)) <= 120),
   gender text check (gender in ('M', 'F')),
-  birth_date text,
-  birth_place text,
-  death_date text,
-  death_place text,
-  burial_place text,
-  cause_of_death text,
-  occupation text,
-  notes text,
+  birth_date text check (
+    birth_date is null
+    or birth_date ~ '^(unknown|[0-9]{4}|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
+  ),
+  birth_place text check (birth_place is null or char_length(trim(birth_place)) <= 160),
+  death_date text check (
+    death_date is null
+    or death_date ~ '^(unknown|[0-9]{4}|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
+  ),
+  death_place text check (death_place is null or char_length(trim(death_place)) <= 160),
+  burial_place text check (burial_place is null or char_length(trim(burial_place)) <= 160),
+  cause_of_death text check (cause_of_death is null or char_length(trim(cause_of_death)) <= 240),
+  occupation text check (occupation is null or char_length(trim(occupation)) <= 120),
+  notes text check (notes is null or char_length(notes) <= 5000),
   confidence text not null default 'confirmed'
     check (confidence in ('confirmed', 'probable', 'uncertain', 'legendary')),
   is_deceased boolean not null default false,
@@ -35,9 +41,15 @@ create table marriages (
   id uuid primary key default uuid_generate_v4(),
   person1_id uuid not null references people(id) on delete cascade,
   person2_id uuid not null references people(id) on delete cascade,
-  marriage_date text,
-  divorce_date text,
-  marriage_place text,
+  marriage_date text check (
+    marriage_date is null
+    or marriage_date ~ '^(unknown|[0-9]{4}|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
+  ),
+  divorce_date text check (
+    divorce_date is null
+    or divorce_date ~ '^(unknown|[0-9]{4}|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'
+  ),
+  marriage_place text check (marriage_place is null or char_length(trim(marriage_place)) <= 160),
   order_index integer not null default 0,
   check (person1_id <> person2_id)
 );

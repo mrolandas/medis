@@ -1,4 +1,6 @@
 import { useMemo, useState, type CSSProperties } from "react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -221,6 +223,155 @@ export function FamilyMembersModal({
   const formatList = (values: string[]) =>
     values.length > 0 ? values.join(", ") : "";
 
+  const exportRows = useMemo(() => {
+    const peopleById = new Map(people.map((person) => [person.id, person]));
+
+    const parentsByChild = new Map<string, string[]>();
+    const childrenByParent = new Map<string, string[]>();
+
+    for (const relation of parentChild) {
+      const parent = peopleById.get(relation.parent_id);
+      const child = peopleById.get(relation.child_id);
+      if (!parent || !child) continue;
+
+      if (!parentsByChild.has(child.id)) parentsByChild.set(child.id, []);
+      if (!childrenByParent.has(parent.id)) childrenByParent.set(parent.id, []);
+
+      parentsByChild
+        .get(child.id)!
+        .push(fullName(parent.first_name, parent.last_name));
+      childrenByParent
+        .get(parent.id)!
+        .push(fullName(child.first_name, child.last_name));
+    }
+
+    const spousesByPerson = new Map<string, string[]>();
+    for (const marriage of marriages) {
+      const left = peopleById.get(marriage.person1_id);
+      const right = peopleById.get(marriage.person2_id);
+      if (!left || !right) continue;
+
+      if (!spousesByPerson.has(left.id)) spousesByPerson.set(left.id, []);
+      if (!spousesByPerson.has(right.id)) spousesByPerson.set(right.id, []);
+
+      spousesByPerson
+        .get(left.id)!
+        .push(fullName(right.first_name, right.last_name));
+      spousesByPerson
+        .get(right.id)!
+        .push(fullName(left.first_name, left.last_name));
+    }
+
+    return people.map((person) => ({
+      id: person.id,
+      first_name: person.first_name,
+      last_name: person.last_name ?? "",
+      maiden_name: person.maiden_name ?? "",
+      gender: person.gender ?? "",
+      birth_date: person.birth_date ?? "",
+      birth_place: person.birth_place ?? "",
+      death_date: person.death_date ?? "",
+      death_place: person.death_place ?? "",
+      burial_place: person.burial_place ?? "",
+      cause_of_death: person.cause_of_death ?? "",
+      occupation: person.occupation ?? "",
+      notes: person.notes ?? "",
+      confidence: person.confidence,
+      is_deceased: person.is_deceased ? "taip" : "ne",
+      photo_url: person.photo_url ?? "",
+      spouses: [...(spousesByPerson.get(person.id) ?? [])]
+        .sort(collator.compare)
+        .join(" | "),
+      parents: [...(parentsByChild.get(person.id) ?? [])]
+        .sort(collator.compare)
+        .join(" | "),
+      children: [...(childrenByParent.get(person.id) ?? [])]
+        .sort(collator.compare)
+        .join(" | "),
+      created_at: person.created_at,
+      updated_at: person.updated_at,
+    }));
+  }, [people, marriages, parentChild, collator]);
+
+  const exportColumns = [
+    "id",
+    "first_name",
+    "last_name",
+    "maiden_name",
+    "gender",
+    "birth_date",
+    "birth_place",
+    "death_date",
+    "death_place",
+    "burial_place",
+    "cause_of_death",
+    "occupation",
+    "notes",
+    "confidence",
+    "is_deceased",
+    "photo_url",
+    "spouses",
+    "parents",
+    "children",
+    "created_at",
+    "updated_at",
+  ] as const;
+
+  const makeCsvField = (value: string) => {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
+  const downloadBlob = (content: BlobPart, type: string, filename: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCsv = () => {
+    const header = exportColumns.join(",");
+    const rows = exportRows.map((row) =>
+      exportColumns
+        .map((column) => makeCsvField(String(row[column] ?? "")))
+        .join(","),
+    );
+    const csv = [header, ...rows].join("\n");
+    downloadBlob(csv, "text/csv;charset=utf-8", "medis-seimos-sarasas.csv");
+  };
+
+  const handleExportPdf = () => {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "pt",
+      format: "a3",
+    });
+
+    autoTable(doc, {
+      head: [exportColumns.map((column) => column)],
+      body: exportRows.map((row) =>
+        exportColumns.map((column) => String(row[column] ?? "")),
+      ),
+      styles: {
+        fontSize: 7,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [45, 52, 54],
+      },
+      margin: { top: 36, right: 18, bottom: 18, left: 18 },
+      didDrawPage: () => {
+        doc.setFontSize(12);
+        doc.text("Medis - pilnas seimos nariu eksportas", 18, 24);
+      },
+    });
+
+    doc.save("medis-seimos-sarasas.pdf");
+  };
+
   return (
     <div
       onClick={onClose}
@@ -259,20 +410,28 @@ export function FamilyMembersModal({
           <h2 style={{ margin: 0, fontSize: 20, color: "#2d3436" }}>
             {t("familyMembers.title")}
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              border: "none",
-              background: "none",
-              fontSize: 28,
-              color: "#636e72",
-              cursor: "pointer",
-              lineHeight: 1,
-            }}
-            title={t("action.close")}
-          >
-            ×
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={handleExportCsv} style={actionButtonStyle}>
+              {t("action.exportCsv")}
+            </button>
+            <button onClick={handleExportPdf} style={actionButtonStyle}>
+              {t("action.exportPdf")}
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                border: "none",
+                background: "none",
+                fontSize: 28,
+                color: "#636e72",
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+              title={t("action.close")}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div style={{ flex: 1, overflow: "auto" }}>
@@ -479,4 +638,16 @@ const stickyRightCellStyle: CSSProperties = {
   right: 0,
   zIndex: 1,
   background: "#fff",
+};
+
+const actionButtonStyle: CSSProperties = {
+  border: "none",
+  background: "#0984e3",
+  color: "#fff",
+  borderRadius: 8,
+  padding: "8px 10px",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };

@@ -15,6 +15,9 @@ const lt = {
   "auth.error": "Neteisingas slaptažodis",
   "auth.lockedPrefix": "Per daug bandymų. Bandykite po",
   "auth.lockedSuffix": "sek.",
+  "validation.requiredFirstName": "Prašome įvesti vardą.",
+  "validation.partialDateInvalid":
+    "Neteisingas datos formatas. Naudokite: YYYY, YYYY-MM, YYYY-MM-DD arba palikite tuščią.",
 
   // Person fields
   "person.firstName": "Vardas",
@@ -65,7 +68,9 @@ const lt = {
   "action.delete": "Ištrinti",
   "action.edit": "Redaguoti",
   "action.add": "Pridėti",
-  "action.familyMembers": "Šeimos nariai",
+  "action.familyMembers": "Sąrašas",
+  "action.exportCsv": "Eksportuoti CSV",
+  "action.exportPdf": "Eksportuoti PDF",
   "action.addPerson": "Pridėti asmenį",
   "action.addSpouse": "Pridėti sutuoktinį(-ę)",
   "action.addParent": "Pridėti tėvą / motiną",
@@ -104,7 +109,7 @@ const lt = {
   "familyMembers.none": "Nėra",
 
   // Date hints
-  "date.hint": "Pvz.: 1850, 1850-03, 1850-03-15",
+  "date.hint": "Pvz.: 1850, 1850-03, 1850-03-15 arba palikite tuščią",
 } as const;
 
 export type TranslationKey = keyof typeof lt;

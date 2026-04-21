@@ -2,6 +2,11 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
 import type { Person, Confidence, PersonInput } from "../../types";
+import {
+  isValidPartialDateInput,
+  normalizePartialDateInput,
+  normalizeTextInput,
+} from "../../lib/inputValidation";
 
 interface PersonDetailsFormProps {
   person: Person;
@@ -15,10 +20,14 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
 
   // Local form state
   const [form, setForm] = useState<Partial<PersonInput>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<string, string>>
+  >({});
 
   // Reset form when person changes
   useEffect(() => {
     setForm({});
+    setFieldErrors({});
   }, [person.id]);
 
   // Merged view: local edits override DB values
@@ -32,14 +41,51 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
 
   const handleChange = useCallback(
     (key: keyof PersonInput, value: string | boolean | null) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
+      let nextValue: string | boolean | null = value;
+
+      if (typeof nextValue === "string") {
+        if (key === "birth_date" || key === "death_date") {
+          if (!isValidPartialDateInput(nextValue)) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [key]: t("validation.partialDateInvalid"),
+            }));
+            setForm((prev) => ({ ...prev, [key]: nextValue }));
+            return;
+          }
+
+          nextValue = normalizePartialDateInput(nextValue);
+        } else {
+          nextValue = normalizeTextInput(nextValue);
+        }
+      }
+
+      if (
+        key === "first_name" &&
+        (!nextValue || String(nextValue).trim() === "")
+      ) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          first_name: t("validation.requiredFirstName"),
+        }));
+        setForm((prev) => ({ ...prev, first_name: String(value ?? "") }));
+        return;
+      }
+
+      setFieldErrors((prev) => {
+        const nextErrors = { ...prev };
+        delete nextErrors[key];
+        return nextErrors;
+      });
+
+      setForm((prev) => ({ ...prev, [key]: nextValue }));
       // Debounced save
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
-        updatePerson(person.id, { [key]: value });
+        updatePerson(person.id, { [key]: nextValue });
       }, 600);
     },
-    [person.id, updatePerson],
+    [person.id, updatePerson, t],
   );
 
   const inputStyle: React.CSSProperties = {
@@ -73,6 +119,11 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
         onChange={(e) => handleChange("first_name", e.target.value)}
         placeholder={t("person.firstName")}
       />
+      {fieldErrors.first_name && (
+        <div style={{ marginTop: 6, color: "#c0392b", fontSize: 13 }}>
+          {fieldErrors.first_name}
+        </div>
+      )}
 
       {/* Last name */}
       <label style={labelStyle}>{t("person.lastName")}</label>
@@ -118,6 +169,11 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
         onChange={(e) => handleChange("birth_date", e.target.value || null)}
         placeholder={t("date.hint")}
       />
+      {fieldErrors.birth_date && (
+        <div style={{ marginTop: 6, color: "#c0392b", fontSize: 13 }}>
+          {fieldErrors.birth_date}
+        </div>
+      )}
 
       {/* Birth place */}
       <label style={labelStyle}>{t("person.birthPlace")}</label>
@@ -157,6 +213,11 @@ export function PersonDetailsForm({ person }: PersonDetailsFormProps) {
             onChange={(e) => handleChange("death_date", e.target.value || null)}
             placeholder={t("date.hint")}
           />
+          {fieldErrors.death_date && (
+            <div style={{ marginTop: 6, color: "#c0392b", fontSize: 13 }}>
+              {fieldErrors.death_date}
+            </div>
+          )}
 
           {/* Death place */}
           <label style={labelStyle}>{t("person.deathPlace")}</label>

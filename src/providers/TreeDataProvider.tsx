@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { getSupabaseClient } from "../lib/supabase";
+import { sanitizePersonInput } from "../lib/inputValidation";
 import type { Person, Marriage, ParentChild, PersonInput } from "../types";
 
 const SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000;
@@ -180,9 +181,10 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
   const addPerson = useCallback(
     async (input: PersonInput): Promise<Person | null> => {
       return withSave(async () => {
+        const normalizedInput = sanitizePersonInput(input);
         const { data, error } = await supabase
           .from("people")
-          .insert(input)
+          .insert(normalizedInput)
           .select()
           .single();
         if (error) throw error;
@@ -198,13 +200,15 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
       const currentPerson = people.find((person) => person.id === id);
       if (!currentPerson) return;
 
+      const normalizedUpdates = sanitizePersonInput(updates);
+
       const optimisticUpdatedAt = new Date().toISOString();
 
       // Optimistic update
       setPeople((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { ...p, ...updates, updated_at: optimisticUpdatedAt }
+            ? { ...p, ...normalizedUpdates, updated_at: optimisticUpdatedAt }
             : p,
         ),
       );
@@ -212,7 +216,7 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
       await withSave(async () => {
         const { data, error } = await supabase
           .from("people")
-          .update({ ...updates, updated_at: optimisticUpdatedAt })
+          .update({ ...normalizedUpdates, updated_at: optimisticUpdatedAt })
           .eq("id", id)
           .eq("updated_at", currentPerson.updated_at)
           .select()

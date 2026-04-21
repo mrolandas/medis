@@ -15,6 +15,7 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Focus and highlight mode for lineage browsing
 - Custom edge rendering for marriages and parent-child relationships
 - Tree controls (zoom/fit) pinned to top-left on desktop and mobile
+- Family list modal (`Sąrašas`) with sortable columns and export to CSV/PDF
 - Deterministic, stable layout — tree structure does not shift when relationships are added or removed
 - Correct generational row assignment via topological sort of the parent→child DAG (spouses share a row; root couples are never displaced by in-law descendants)
 - Family fork edges handle children that span multiple rows (e.g. a sibling who married into a different generation)
@@ -61,6 +62,17 @@ where id = true;
 ```
 
 The client sends the entered password via request header (`x-medis-password`), and RLS policies allow reads/writes only when `medis_is_authorized()` succeeds.
+
+For an already populated database, run the SQL from `supabase/data-quality-hardening-existing-db.sql` in Supabase SQL Editor.
+
+This adds guardrails for date formats and key text-field lengths without deleting existing rows.
+
+Accepted partial date values:
+
+- `YYYY`
+- `YYYY-MM`
+- `YYYY-MM-DD`
+- blank value (stored as unknown)
 
 ### 4. Start the development server
 
@@ -117,6 +129,7 @@ Important files:
 
 - Authentication is intentionally lightweight and uses a session password gate in the browser.
 - Login attempts are progressively throttled client-side after failed attempts (exponential cooldown with cap).
+- Person inputs are normalized before save (trimming/empty normalization/date normalization).
 - The visual layout is custom and optimized for genealogy-specific constraints rather than generic graph layout.
 - `relatives-tree` is used to derive initial X positions. Y (generational row) is fully overridden by a topological sort so that root couples always appear at row 0 and no child can appear at the same row as or above their parents.
 - Family fork edges always extend their horizontal bar to include the couple's midpoint (`stemX`), so the stem is never left floating when all children are on one side of the couple.

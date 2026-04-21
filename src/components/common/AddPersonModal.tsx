@@ -3,6 +3,10 @@ import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import type { PersonInput, Confidence } from "../../types";
+import {
+  isValidPartialDateInput,
+  sanitizePersonInput,
+} from "../../lib/inputValidation";
 
 interface AddPersonModalProps {
   onClose: () => void;
@@ -36,27 +40,54 @@ export function AddPersonModal({
   const isMobile = useIsMobile();
   const [form, setForm] = useState<PersonInput>({ ...defaultPerson });
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [birthDateError, setBirthDateError] = useState<string | null>(null);
 
   const handleChange = useCallback(
     (key: keyof PersonInput, value: string | boolean | null) => {
       setForm((prev) => ({ ...prev, [key]: value }));
+
+      if (key === "first_name") {
+        const ok = typeof value === "string" && value.trim().length > 0;
+        setNameError(ok ? null : t("validation.requiredFirstName"));
+      }
+
+      if (key === "birth_date") {
+        const date = typeof value === "string" ? value : null;
+        setBirthDateError(
+          isValidPartialDateInput(date)
+            ? null
+            : t("validation.partialDateInvalid"),
+        );
+      }
     },
-    [],
+    [t],
   );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!form.first_name.trim()) return;
+
+      const normalized = sanitizePersonInput(form);
+      const hasName = !!normalized.first_name;
+      const birthDateOk = isValidPartialDateInput(normalized.birth_date);
+
+      setNameError(hasName ? null : t("validation.requiredFirstName"));
+      setBirthDateError(
+        birthDateOk ? null : t("validation.partialDateInvalid"),
+      );
+
+      if (!hasName || !birthDateOk) return;
+
       setSaving(true);
-      const person = await addPerson(form);
+      const person = await addPerson(normalized);
       setSaving(false);
       if (person) {
         onPersonAdded(person.id);
         onClose();
       }
     },
-    [form, addPerson, onPersonAdded, onClose],
+    [form, addPerson, onPersonAdded, onClose, t],
   );
 
   const inputStyle: React.CSSProperties = {
@@ -124,6 +155,11 @@ export function AddPersonModal({
             placeholder={t("person.firstName")}
             autoFocus
           />
+          {nameError && (
+            <div style={{ marginTop: 6, color: "#c0392b", fontSize: 13 }}>
+              {nameError}
+            </div>
+          )}
 
           <label style={labelStyle}>{t("person.lastName")}</label>
           <input
@@ -151,6 +187,11 @@ export function AddPersonModal({
             onChange={(e) => handleChange("birth_date", e.target.value || null)}
             placeholder={t("date.hint")}
           />
+          {birthDateError && (
+            <div style={{ marginTop: 6, color: "#c0392b", fontSize: 13 }}>
+              {birthDateError}
+            </div>
+          )}
 
           <label style={labelStyle}>{t("confidence")}</label>
           <select

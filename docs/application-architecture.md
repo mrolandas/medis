@@ -62,16 +62,26 @@ The runtime structure is:
 
 - Tabular family overview.
 - Sortable columns and quick edit entry point.
+- Full export actions (CSV/PDF) including person core fields and associated relationships.
 
 9. `src/lib/supabase.ts`
 
 - Supabase client factory.
 - Attaches request-level auth header (`x-medis-password`) from authenticated session.
 
-10. `supabase/migration.sql`
+10. `src/lib/inputValidation.ts`
+
+- Shared input normalization and validation utilities.
+- Enforces accepted partial date formats and normalizes blank/unknown date semantics.
+
+11. `supabase/migration.sql`
 
 - Schema and policy baseline.
 - Includes app auth function and RLS policies tied to request header validation.
+
+12. `supabase/data-quality-hardening-existing-db.sql`
+
+- Non-destructive constraints for existing populated databases (`NOT VALID` checks).
 
 ## Data Model
 
@@ -160,6 +170,11 @@ Current protections:
 5. Progressive login throttling
 
 - Failed UI auth attempts trigger exponentially increasing cooldown (capped), persisted in local storage.
+
+6. Input consistency guardrails
+
+- UI and provider normalize text/date fields before writes.
+- Database constraints enforce supported date formats and key length limits.
 
 ## Security Notes
 
