@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -36,12 +36,54 @@ export function AddPersonModal({
   onPersonAdded,
 }: AddPersonModalProps) {
   const { t } = useTranslation();
-  const { addPerson } = useTreeData();
+  const { people, addPerson, addParentChild } = useTreeData();
   const isMobile = useIsMobile();
   const [form, setForm] = useState<PersonInput>({ ...defaultPerson });
+  const [selectedParentIds, setSelectedParentIds] = useState<string[]>([]);
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
+
+  const selectablePeople = useMemo(
+    () =>
+      [...people].sort((a, b) => {
+        const left = `${a.first_name} ${a.last_name ?? ""}`
+          .trim()
+          .toLocaleLowerCase("lt");
+        const right = `${b.first_name} ${b.last_name ?? ""}`
+          .trim()
+          .toLocaleLowerCase("lt");
+        if (left < right) return -1;
+        if (left > right) return 1;
+        return a.id.localeCompare(b.id);
+      }),
+    [people],
+  );
+
+  const personLabel = useCallback(
+    (id: string) => {
+      const person = people.find((p) => p.id === id);
+      if (!person) return "?";
+      return `${person.first_name} ${person.last_name ?? ""}`.trim();
+    },
+    [people],
+  );
+
+  const toggleParent = useCallback((id: string) => {
+    setSelectedParentIds((prev) =>
+      prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id],
+    );
+    // One person cannot be both parent and child of the same new node.
+    setSelectedChildIds((prev) => prev.filter((value) => value !== id));
+  }, []);
+
+  const toggleChild = useCallback((id: string) => {
+    setSelectedChildIds((prev) =>
+      prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id],
+    );
+    setSelectedParentIds((prev) => prev.filter((value) => value !== id));
+  }, []);
 
   const handleChange = useCallback(
     (key: keyof PersonInput, value: string | boolean | null) => {
@@ -80,14 +122,35 @@ export function AddPersonModal({
       if (!hasName || !birthDateOk) return;
 
       setSaving(true);
-      const person = await addPerson(normalized);
-      setSaving(false);
-      if (person) {
-        onPersonAdded(person.id);
-        onClose();
+      try {
+        const person = await addPerson(normalized);
+        if (person) {
+          await Promise.all([
+            ...selectedParentIds.map((parentId) =>
+              addParentChild(parentId, person.id),
+            ),
+            ...selectedChildIds.map((childId) =>
+              addParentChild(person.id, childId),
+            ),
+          ]);
+
+          onPersonAdded(person.id);
+          onClose();
+        }
+      } finally {
+        setSaving(false);
       }
     },
-    [form, addPerson, onPersonAdded, onClose, t],
+    [
+      form,
+      addPerson,
+      addParentChild,
+      selectedParentIds,
+      selectedChildIds,
+      onPersonAdded,
+      onClose,
+      t,
+    ],
   );
 
   const inputStyle: React.CSSProperties = {
@@ -192,6 +255,84 @@ export function AddPersonModal({
               {birthDateError}
             </div>
           )}
+
+          <label style={labelStyle}>{t("relation.parents")}</label>
+          <div
+            style={{
+              ...inputStyle,
+              padding: "8px 10px",
+              minHeight: 80,
+              maxHeight: 140,
+              overflowY: "auto",
+            }}
+          >
+            {selectablePeople.length === 0 ? (
+              <div style={{ color: "#7f8c8d", fontSize: 14 }}>
+                {t("familyMembers.none")}
+              </div>
+            ) : (
+              selectablePeople.map((person) => (
+                <label
+                  key={`parent-${person.id}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 14,
+                    color: "#2d3436",
+                    padding: "4px 0",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedParentIds.includes(person.id)}
+                    onChange={() => toggleParent(person.id)}
+                  />
+                  {personLabel(person.id)}
+                </label>
+              ))
+            )}
+          </div>
+
+          <label style={labelStyle}>{t("relation.children")}</label>
+          <div
+            style={{
+              ...inputStyle,
+              padding: "8px 10px",
+              minHeight: 80,
+              maxHeight: 140,
+              overflowY: "auto",
+            }}
+          >
+            {selectablePeople.length === 0 ? (
+              <div style={{ color: "#7f8c8d", fontSize: 14 }}>
+                {t("familyMembers.none")}
+              </div>
+            ) : (
+              selectablePeople.map((person) => (
+                <label
+                  key={`child-${person.id}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 14,
+                    color: "#2d3436",
+                    padding: "4px 0",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedChildIds.includes(person.id)}
+                    onChange={() => toggleChild(person.id)}
+                  />
+                  {personLabel(person.id)}
+                </label>
+              ))
+            )}
+          </div>
 
           <label style={labelStyle}>{t("confidence")}</label>
           <select
