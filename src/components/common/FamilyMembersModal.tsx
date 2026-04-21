@@ -1,9 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useIsMobile } from "../../hooks/useIsMobile";
+
+(pdfMake as any).vfs = (pdfFonts as any).vfs ?? (pdfFonts as any).pdfMake?.vfs;
 
 interface FamilyMembersModalProps {
   onClose: () => void;
@@ -35,6 +37,60 @@ type SortDirection = "asc" | "desc";
 
 function fullName(firstName: string, lastName: string | null): string {
   return `${firstName} ${lastName ?? ""}`.trim();
+}
+
+function formatShortDate(value: string | null | undefined): string {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const datePart = trimmed.slice(0, 10);
+  const match = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year}`;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return trimmed;
+
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = String(parsed.getFullYear());
+  return `${day}/${month}/${year}`;
+}
+
+function formatGenderShort(gender: string | null | undefined): string {
+  if (!gender) return "";
+  const normalized = gender.trim().toLocaleLowerCase("lt");
+
+  if (["male", "m", "v", "vyras"].includes(normalized)) return "V";
+  if (["female", "f", "moteris"].includes(normalized)) return "M";
+
+  return "";
+}
+
+function formatConfidenceLt(confidence: unknown): string {
+  if (confidence === null || confidence === undefined) return "";
+
+  if (typeof confidence === "number") {
+    if (confidence <= 1) return "žemas";
+    if (confidence <= 2) return "vidutinis";
+    return "aukštas";
+  }
+
+  const normalized = String(confidence).trim().toLocaleLowerCase("lt");
+  if (!normalized) return "";
+
+  if (["low", "žemas", "zemas"].includes(normalized)) return "žemas";
+  if (["medium", "vidutinis"].includes(normalized)) return "vidutinis";
+  if (["high", "aukštas", "aukstas"].includes(normalized)) return "aukštas";
+  if (["unknown", "nežinoma", "nezinoma"].includes(normalized)) {
+    return "nežinoma";
+  }
+
+  return String(confidence);
 }
 
 export function FamilyMembersModal({
@@ -263,22 +319,20 @@ export function FamilyMembersModal({
     }
 
     return people.map((person) => ({
-      id: person.id,
       first_name: person.first_name,
       last_name: person.last_name ?? "",
       maiden_name: person.maiden_name ?? "",
-      gender: person.gender ?? "",
-      birth_date: person.birth_date ?? "",
+      gender: formatGenderShort(person.gender),
+      birth_date: formatShortDate(person.birth_date),
       birth_place: person.birth_place ?? "",
-      death_date: person.death_date ?? "",
+      death_date: formatShortDate(person.death_date),
       death_place: person.death_place ?? "",
       burial_place: person.burial_place ?? "",
       cause_of_death: person.cause_of_death ?? "",
       occupation: person.occupation ?? "",
       notes: person.notes ?? "",
-      confidence: person.confidence,
-      is_deceased: person.is_deceased ? "taip" : "ne",
-      photo_url: person.photo_url ?? "",
+      confidence: formatConfidenceLt(person.confidence),
+      is_deceased: person.is_deceased ? "Taip" : "Ne",
       spouses: [...(spousesByPerson.get(person.id) ?? [])]
         .sort(collator.compare)
         .join(" | "),
@@ -288,33 +342,31 @@ export function FamilyMembersModal({
       children: [...(childrenByParent.get(person.id) ?? [])]
         .sort(collator.compare)
         .join(" | "),
-      created_at: person.created_at,
-      updated_at: person.updated_at,
+      created_at: formatShortDate(person.created_at),
+      updated_at: formatShortDate(person.updated_at),
     }));
   }, [people, marriages, parentChild, collator]);
 
   const exportColumns = [
-    "id",
-    "first_name",
-    "last_name",
-    "maiden_name",
-    "gender",
-    "birth_date",
-    "birth_place",
-    "death_date",
-    "death_place",
-    "burial_place",
-    "cause_of_death",
-    "occupation",
-    "notes",
-    "confidence",
-    "is_deceased",
-    "photo_url",
-    "spouses",
-    "parents",
-    "children",
-    "created_at",
-    "updated_at",
+    { key: "first_name", label: "Vardas" },
+    { key: "last_name", label: "Pavardė" },
+    { key: "maiden_name", label: "Mergautinė pavardė" },
+    { key: "gender", label: "Lytis" },
+    { key: "birth_date", label: "Gimimo data" },
+    { key: "birth_place", label: "Gimimo vieta" },
+    { key: "death_date", label: "Mirties data" },
+    { key: "death_place", label: "Mirties vieta" },
+    { key: "burial_place", label: "Palaidojimo vieta" },
+    { key: "cause_of_death", label: "Mirties priežastis" },
+    { key: "occupation", label: "Profesija" },
+    { key: "notes", label: "Pastabos" },
+    { key: "confidence", label: "Patikimumas" },
+    { key: "is_deceased", label: "Miręs" },
+    { key: "spouses", label: "Sutuoktiniai" },
+    { key: "parents", label: "Tėvai" },
+    { key: "children", label: "Vaikai" },
+    { key: "created_at", label: "Sukurta" },
+    { key: "updated_at", label: "Atnaujinta" },
   ] as const;
 
   const makeCsvField = (value: string) => {
@@ -333,10 +385,12 @@ export function FamilyMembersModal({
   };
 
   const handleExportCsv = () => {
-    const header = exportColumns.join(",");
+    const header = exportColumns
+      .map((column) => makeCsvField(column.label))
+      .join(",");
     const rows = exportRows.map((row) =>
       exportColumns
-        .map((column) => makeCsvField(String(row[column] ?? "")))
+        .map((column) => makeCsvField(String(row[column.key] ?? "")))
         .join(","),
     );
     const csv = [header, ...rows].join("\n");
@@ -344,32 +398,42 @@ export function FamilyMembersModal({
   };
 
   const handleExportPdf = () => {
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a3",
-    });
-
-    autoTable(doc, {
-      head: [exportColumns.map((column) => column)],
-      body: exportRows.map((row) =>
-        exportColumns.map((column) => String(row[column] ?? "")),
-      ),
+    const documentDefinition = {
+      pageOrientation: "landscape" as const,
+      pageSize: "A3" as const,
+      pageMargins: [20, 30, 20, 20] as [number, number, number, number],
+      content: [
+        {
+          text: "Medis - pilnas šeimos narių eksportas",
+          style: "title",
+          margin: [0, 0, 0, 8] as [number, number, number, number],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: exportColumns.map(() => "auto" as const),
+            body: [
+              exportColumns.map((column) => column.label),
+              ...exportRows.map((row) =>
+                exportColumns.map((column) => String(row[column.key] ?? "")),
+              ),
+            ],
+          },
+          layout: "lightHorizontalLines" as const,
+        },
+      ],
       styles: {
-        fontSize: 7,
-        cellPadding: 3,
+        title: {
+          fontSize: 12,
+          bold: true,
+        },
       },
-      headStyles: {
-        fillColor: [45, 52, 54],
+      defaultStyle: {
+        fontSize: 8,
       },
-      margin: { top: 36, right: 18, bottom: 18, left: 18 },
-      didDrawPage: () => {
-        doc.setFontSize(12);
-        doc.text("Medis - pilnas seimos nariu eksportas", 18, 24);
-      },
-    });
+    };
 
-    doc.save("medis-seimos-sarasas.pdf");
+    pdfMake.createPdf(documentDefinition).download("medis-seimos-sarasas.pdf");
   };
 
   return (
