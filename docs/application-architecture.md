@@ -25,6 +25,7 @@ The runtime structure is:
 - Handles app-level authentication gate.
 - Stores authenticated state in session storage.
 - Validates password through Supabase RPC (`medis_is_authorized`) before unlocking UI.
+- Applies progressive cooldown after failed attempts to slow password guessing.
 
 3. `src/providers/TreeDataProvider.tsx`
 
@@ -44,6 +45,7 @@ The runtime structure is:
 
 - React Flow surface.
 - Receives nodes/edges from `useTreeLayout` and handles viewport interactions.
+- Keeps zoom/fit controls pinned to top-left across desktop and mobile.
 
 6. `src/components/tree/useTreeLayout.ts`
 
@@ -154,6 +156,10 @@ Current protections:
 4. RLS authorization boundary
 
 - DB policies require successful app authorization signal (`medis_is_authorized`).
+
+5. Progressive login throttling
+
+- Failed UI auth attempts trigger exponentially increasing cooldown (capped), persisted in local storage.
 
 ## Security Notes
 

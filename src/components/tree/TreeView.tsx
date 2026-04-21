@@ -147,6 +147,7 @@ function TreeViewInner({
     >
       <Background color="#e0e0e0" gap={20} />
       <Controls
+        position="top-left"
         showInteractive={false}
         style={{
           background: "#fff",

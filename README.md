@@ -11,8 +11,10 @@ It supports browsing and editing people, marriages, and parent-child relationshi
 - Relationship editing for parents, children, and spouses
 - Supabase-backed data storage
 - Session-based password gate with DB-enforced access policy
+- Progressive login cooldown after failed attempts (anti-guessing throttle)
 - Focus and highlight mode for lineage browsing
 - Custom edge rendering for marriages and parent-child relationships
+- Tree controls (zoom/fit) pinned to top-left on desktop and mobile
 - Deterministic, stable layout — tree structure does not shift when relationships are added or removed
 - Correct generational row assignment via topological sort of the parent→child DAG (spouses share a row; root couples are never displaced by in-law descendants)
 - Family fork edges handle children that span multiple rows (e.g. a sibling who married into a different generation)
@@ -53,7 +55,7 @@ Then set your real app password hash in `app_settings` (replace `YOUR_STRONG_PAS
 
 ```sql
 update app_settings
-set app_password_hash = crypt('YOUR_STRONG_PASSWORD', gen_salt('bf')),
+set app_password_hash = extensions.crypt('YOUR_STRONG_PASSWORD', extensions.gen_salt('bf')),
     updated_at = now()
 where id = true;
 ```
@@ -114,6 +116,7 @@ Important files:
 ## Notes
 
 - Authentication is intentionally lightweight and uses a session password gate in the browser.
+- Login attempts are progressively throttled client-side after failed attempts (exponential cooldown with cap).
 - The visual layout is custom and optimized for genealogy-specific constraints rather than generic graph layout.
 - `relatives-tree` is used to derive initial X positions. Y (generational row) is fully overridden by a topological sort so that root couples always appear at row 0 and no child can appear at the same row as or above their parents.
 - Family fork edges always extend their horizontal bar to include the couple's midpoint (`stemX`), so the stem is never left floating when all children are on one side of the couple.

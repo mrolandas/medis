@@ -13,6 +13,8 @@ const lt = {
   "auth.password": "Slaptažodis",
   "auth.submit": "Prisijungti",
   "auth.error": "Neteisingas slaptažodis",
+  "auth.lockedPrefix": "Per daug bandymų. Bandykite po",
+  "auth.lockedSuffix": "sek.",
 
   // Person fields
   "person.firstName": "Vardas",

@@ -4,6 +4,10 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { AUTH_PASSWORD_SESSION_KEY } from "../../lib/supabase";
 
 const SESSION_KEY = "medis_authenticated";
+const FAILED_ATTEMPTS_KEY = "medis_failed_attempts";
+const LOCK_UNTIL_KEY = "medis_lock_until";
+const BASE_LOCK_SECONDS = 2;
+const MAX_LOCK_SECONDS = 10 * 60;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -31,6 +35,15 @@ export function AuthGate({ children }: AuthGateProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [lockUntilMs, setLockUntilMs] = useState(() => {
+    const raw = localStorage.getItem(LOCK_UNTIL_KEY);
+    const value = raw ? Number(raw) : 0;
+    return Number.isFinite(value) ? value : 0;
+  });
+
+  const nowMs = Date.now();
+  const isLocked = lockUntilMs > nowMs;
+  const remainingSeconds = Math.max(0, Math.ceil((lockUntilMs - nowMs) / 1000));
 
   const validatePassword = useCallback(async (candidate: string) => {
     if (!SUPABASE_URL || !SUPABASE_KEY) return false;
@@ -53,6 +66,8 @@ export function AuthGate({ children }: AuthGateProps) {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (Date.now() < lockUntilMs) return;
+
       if (!password.trim()) {
         setError(true);
         return;
@@ -65,18 +80,45 @@ export function AuthGate({ children }: AuthGateProps) {
       if (isValid) {
         sessionStorage.setItem(SESSION_KEY, "true");
         sessionStorage.setItem(AUTH_PASSWORD_SESSION_KEY, password);
+        localStorage.removeItem(FAILED_ATTEMPTS_KEY);
+        localStorage.removeItem(LOCK_UNTIL_KEY);
+        setLockUntilMs(0);
         setAuthenticated(true);
         setError(false);
         // Reload to ensure all data clients are re-created with auth headers.
         window.location.reload();
       } else {
+        const previous = Number(
+          localStorage.getItem(FAILED_ATTEMPTS_KEY) ?? "0",
+        );
+        const failedAttempts = Number.isFinite(previous) ? previous + 1 : 1;
+        localStorage.setItem(FAILED_ATTEMPTS_KEY, String(failedAttempts));
+
+        const lockSeconds = Math.min(
+          MAX_LOCK_SECONDS,
+          BASE_LOCK_SECONDS * 2 ** Math.max(0, failedAttempts - 1),
+        );
+        const nextLockUntil = Date.now() + lockSeconds * 1000;
+        localStorage.setItem(LOCK_UNTIL_KEY, String(nextLockUntil));
+        setLockUntilMs(nextLockUntil);
+
         sessionStorage.removeItem(SESSION_KEY);
         sessionStorage.removeItem(AUTH_PASSWORD_SESSION_KEY);
         setError(true);
       }
     },
-    [password, validatePassword],
+    [password, validatePassword, lockUntilMs],
   );
+
+  useEffect(() => {
+    if (!isLocked) return;
+    const interval = window.setInterval(() => {
+      const latest = Number(localStorage.getItem(LOCK_UNTIL_KEY) ?? "0");
+      setLockUntilMs(Number.isFinite(latest) ? latest : 0);
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isLocked]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -128,6 +170,7 @@ export function AuthGate({ children }: AuthGateProps) {
         <input
           type="password"
           value={password}
+          disabled={submitting || isLocked}
           onChange={(e) => {
             setPassword(e.target.value);
             setError(false);
@@ -152,19 +195,25 @@ export function AuthGate({ children }: AuthGateProps) {
           </div>
         )}
 
+        {isLocked && (
+          <div style={{ color: "#d35400", fontSize: 14, marginBottom: 8 }}>
+            {t("auth.lockedPrefix")} {remainingSeconds} {t("auth.lockedSuffix")}
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || isLocked}
           style={{
             width: "100%",
             padding: "12px 20px",
             fontSize: 17,
             fontWeight: 600,
-            background: submitting ? "#95a5a6" : "#4a7c59",
+            background: submitting || isLocked ? "#95a5a6" : "#4a7c59",
             color: "#fff",
             border: "none",
             borderRadius: 10,
-            cursor: submitting ? "not-allowed" : "pointer",
+            cursor: submitting || isLocked ? "not-allowed" : "pointer",
             marginTop: 8,
           }}
         >
