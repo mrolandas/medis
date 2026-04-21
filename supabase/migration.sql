@@ -41,6 +41,8 @@ create table marriages (
   id uuid primary key default uuid_generate_v4(),
   person1_id uuid not null references people(id) on delete cascade,
   person2_id uuid not null references people(id) on delete cascade,
+  relationship_status text not null default 'married'
+    check (relationship_status in ('married', 'divorced', 'widowed')),
   marriage_date text check (
     marriage_date is null
     or marriage_date ~ '^(unknown|[0-9]{4}|[0-9]{4}-(0[1-9]|1[0-2])|[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]))$'

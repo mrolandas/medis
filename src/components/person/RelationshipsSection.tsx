@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTreeData } from "../../providers/TreeDataProvider";
 import { useTranslation } from "../../hooks/useTranslation";
-import type { Person } from "../../types";
+import type { Person, MarriageStatus } from "../../types";
 
 interface RelationshipsSectionProps {
   person: Person;
@@ -27,6 +27,8 @@ export function RelationshipsSection({
     "spouse" | "parent" | "child" | null
   >(null);
   const [selectedId, setSelectedId] = useState("");
+  const [relationshipStatus, setRelationshipStatus] =
+    useState<MarriageStatus>("married");
 
   // Find relationships for this person
   const personMarriages = marriages.filter(
@@ -62,8 +64,9 @@ export function RelationshipsSection({
       await addMarriage({
         person1_id: person.id,
         person2_id: selectedId,
+        relationship_status: relationshipStatus,
         marriage_date: null,
-        divorce_date: null,
+        divorce_date: relationshipStatus === "divorced" ? "unknown" : null,
         marriage_place: null,
         order_index: personMarriages.length,
       });
@@ -74,9 +77,11 @@ export function RelationshipsSection({
     }
     setAddingType(null);
     setSelectedId("");
+    setRelationshipStatus("married");
   }, [
     addingType,
     selectedId,
+    relationshipStatus,
     person.id,
     personMarriages.length,
     addMarriage,
@@ -173,6 +178,38 @@ export function RelationshipsSection({
           </option>
         ))}
       </select>
+      {addingType === "spouse" && (
+        <>
+          <label
+            style={{
+              display: "block",
+              fontSize: 13,
+              color: "#636e72",
+              marginBottom: 4,
+            }}
+          >
+            {t("relation.status")}
+          </label>
+          <select
+            value={relationshipStatus}
+            onChange={(e) =>
+              setRelationshipStatus(e.target.value as MarriageStatus)
+            }
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              fontSize: 16,
+              border: "2px solid #dfe6e9",
+              borderRadius: 8,
+              marginBottom: 8,
+            }}
+          >
+            <option value="married">{t("relation.status.married")}</option>
+            <option value="divorced">{t("relation.status.divorced")}</option>
+            <option value="widowed">{t("relation.status.widowed")}</option>
+          </select>
+        </>
+      )}
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={handleAdd}
@@ -189,6 +226,7 @@ export function RelationshipsSection({
           onClick={() => {
             setAddingType(null);
             setSelectedId("");
+            setRelationshipStatus("married");
           }}
           style={addButtonStyle}
         >
@@ -218,6 +256,13 @@ export function RelationshipsSection({
                 style={{ cursor: "pointer", textDecoration: "underline" }}
               >
                 {getPersonName(spouseId)}
+              </span>
+              <span style={{ fontSize: 12, color: "#7f8c8d" }}>
+                {m.relationship_status === "divorced"
+                  ? t("relation.status.divorced")
+                  : m.relationship_status === "widowed"
+                    ? t("relation.status.widowed")
+                    : t("relation.status.married")}
               </span>
               {m.marriage_date && (
                 <span style={{ fontSize: 12, color: "#7f8c8d" }}>

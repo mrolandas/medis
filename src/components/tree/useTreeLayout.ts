@@ -9,6 +9,8 @@ const BASE_GAP_X = 16;
 const BASE_GAP_Y = 80;
 const FAMILY_CLUSTER_PADDING = 18;
 const INTER_FAMILY_GAP = 48;
+const FORMER_RELATION_EXTRA_GAP = 54;
+const NON_SPOUSE_EXTRA_GAP = 22;
 
 interface LayoutResult {
   nodes: Node[];
@@ -35,6 +37,15 @@ function compareIsoDates(
   if (left < right) return -1;
   if (left > right) return 1;
   return 0;
+}
+
+function normalizedMarriageStatus(
+  marriage: Marriage,
+): "married" | "divorced" | "widowed" {
+  if (marriage.relationship_status === "divorced") return "divorced";
+  if (marriage.relationship_status === "widowed") return "widowed";
+  if (marriage.divorce_date) return "divorced";
+  return "married";
 }
 
 /**
@@ -89,6 +100,42 @@ export function useTreeLayout(
         a.id.localeCompare(b.id)
       );
     });
+
+    const pairKey = (leftId: string, rightId: string) =>
+      leftId < rightId ? `${leftId}|${rightId}` : `${rightId}|${leftId}`;
+
+    const marriageStatusByPair = new Map<
+      string,
+      "married" | "divorced" | "widowed"
+    >();
+    for (const marriage of sortedMarriages) {
+      const key = pairKey(marriage.person1_id, marriage.person2_id);
+      const current = marriageStatusByPair.get(key);
+      const next = normalizedMarriageStatus(marriage);
+      if (current === "married") continue;
+      if (next === "married") {
+        marriageStatusByPair.set(key, "married");
+        continue;
+      }
+      if (!current) marriageStatusByPair.set(key, next);
+    }
+
+    const coParentPairs = new Set<string>();
+    const parentsByChildForGaps = new Map<string, string[]>();
+    for (const pc of sortedParentChild) {
+      if (!parentsByChildForGaps.has(pc.child_id)) {
+        parentsByChildForGaps.set(pc.child_id, []);
+      }
+      parentsByChildForGaps.get(pc.child_id)!.push(pc.parent_id);
+    }
+    for (const parentIds of parentsByChildForGaps.values()) {
+      const uniq = [...new Set(parentIds)].sort(comparePersonIds);
+      for (let i = 0; i < uniq.length; i += 1) {
+        for (let j = i + 1; j < uniq.length; j += 1) {
+          coParentPairs.add(pairKey(uniq[i], uniq[j]));
+        }
+      }
+    }
 
     // ── Build siblings lookup ──
     // Two people are siblings if they share at least one parent
@@ -724,11 +771,27 @@ export function useTreeLayout(
       let lastOccupied = -Infinity;
       let previousFamilyKey: string | null = null;
       for (const cluster of familyClusters) {
-        const memberCount = cluster.groups.reduce(
-          (sum, group) => sum + group.members.length,
-          0,
-        );
-        const ownSpan = (memberCount - 1) * MIN_CENTER_GAP;
+        const orderedMembers = cluster.groups.flatMap((group) => group.members);
+        const offsets: number[] = [0];
+        for (let index = 1; index < orderedMembers.length; index += 1) {
+          const leftId = orderedMembers[index - 1];
+          const rightId = orderedMembers[index];
+          const key = pairKey(leftId, rightId);
+          const pairStatus = marriageStatusByPair.get(key);
+
+          const stepGap =
+            pairStatus === "married"
+              ? MIN_CENTER_GAP
+              : pairStatus === "divorced" ||
+                  pairStatus === "widowed" ||
+                  coParentPairs.has(key)
+                ? MIN_CENTER_GAP + FORMER_RELATION_EXTRA_GAP
+                : MIN_CENTER_GAP + NON_SPOUSE_EXTRA_GAP;
+
+          offsets.push(offsets[offsets.length - 1] + stepGap);
+        }
+
+        const ownSpan = offsets[offsets.length - 1] ?? 0;
         const clusterSpan = Math.max(ownSpan, cluster.effectiveSpan);
         const desiredFirst = cluster.preferredCenterX - clusterSpan / 2;
         const familyGap =
@@ -749,7 +812,7 @@ export function useTreeLayout(
           for (const id of group.members) {
             const pos = positions.get(id);
             if (!pos) continue;
-            const x = firstMemberCenter + memberIndex * MIN_CENTER_GAP;
+            const x = firstMemberCenter + (offsets[memberIndex] ?? 0);
             positions.set(id, { x, y: pos.y });
             memberIndex += 1;
           }
@@ -914,7 +977,13 @@ export function useTreeLayout(
         source: m.person1_id,
         target: m.person2_id,
         type: "marriage",
-        data: { leftX, rightX, lineY, midX },
+        data: {
+          leftX,
+          rightX,
+          lineY,
+          midX,
+          status: normalizedMarriageStatus(m),
+        },
         style: { stroke: "#e8915c", strokeWidth: 2 },
       });
     }

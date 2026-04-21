@@ -1,6 +1,38 @@
 do $$
 begin
   if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'marriages'
+      and column_name = 'relationship_status'
+  ) then
+    alter table marriages
+      add column relationship_status text;
+  end if;
+
+  update marriages
+  set relationship_status = case
+    when divorce_date is not null then 'divorced'
+    else 'married'
+  end
+  where relationship_status is null;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'marriages_relationship_status_chk'
+  ) then
+    alter table marriages
+      add constraint marriages_relationship_status_chk
+      check (relationship_status in ('married', 'divorced', 'widowed')) not valid;
+  end if;
+
+  alter table marriages
+    alter column relationship_status set default 'married';
+
+  alter table marriages
+    alter column relationship_status set not null;
+
+  if not exists (
     select 1 from pg_constraint where conname = 'people_first_name_len_chk'
   ) then
     alter table people

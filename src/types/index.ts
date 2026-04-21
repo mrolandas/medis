@@ -25,6 +25,7 @@ export interface Marriage {
   id: string;
   person1_id: string;
   person2_id: string;
+  relationship_status: MarriageStatus | null;
   marriage_date: string | null;
   divorce_date: string | null;
   marriage_place: string | null;
@@ -39,6 +40,7 @@ export interface ParentChild {
 }
 
 export type Confidence = "confirmed" | "probable" | "uncertain" | "legendary";
+export type MarriageStatus = "married" | "divorced" | "widowed";
 
 // Convenience types for the UI
 

@@ -2,23 +2,51 @@ import { type EdgeProps } from "@xyflow/react";
 
 /** Horizontal dashed edge connecting spouses — drawn in the gap between nodes */
 export function MarriageEdge({ id, data }: EdgeProps) {
-  const { leftX, rightX, lineY } = data as {
+  const { leftX, rightX, lineY, midX, status } = data as {
     leftX: number;
     rightX: number;
     lineY: number;
     midX: number;
+    status?: "married" | "divorced" | "widowed";
   };
 
+  const isFormer = status === "divorced" || status === "widowed";
+  const stroke = isFormer ? "#9aa3ab" : "#cf7d47";
+  const strokeWidth = isFormer ? 1.5 : 2.5;
+  const opacity = isFormer ? 0.55 : 1;
+  const dash = isFormer ? "2 5" : "7 4";
+
   return (
-    <path
-      id={id}
-      d={`M ${leftX} ${lineY} L ${rightX} ${lineY}`}
-      stroke="#cf7d47"
-      strokeWidth={2.5}
-      strokeDasharray="7 4"
-      strokeLinecap="round"
-      fill="none"
-    />
+    <g opacity={opacity}>
+      <path
+        id={id}
+        d={`M ${leftX} ${lineY} L ${rightX} ${lineY}`}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={dash}
+        strokeLinecap="round"
+        fill="none"
+      />
+      {isFormer && (
+        <>
+          <circle
+            cx={midX}
+            cy={lineY}
+            r={7}
+            fill="#ffffff"
+            stroke="#9aa3ab"
+            strokeWidth={1.2}
+          />
+          <path
+            d={`M ${midX - 3} ${lineY - 3} L ${midX + 3} ${lineY + 3} M ${midX - 3} ${lineY + 3} L ${midX + 3} ${lineY - 3}`}
+            stroke="#7c878f"
+            strokeWidth={1.3}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </>
+      )}
+    </g>
   );
 }
 

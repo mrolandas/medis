@@ -61,6 +61,10 @@ const lt = {
   "relation.marriageDate": "Santuokos data",
   "relation.divorceDate": "Skyrybų data",
   "relation.marriagePlace": "Santuokos vieta",
+  "relation.status": "Ryšio būsena",
+  "relation.status.married": "Santuoka",
+  "relation.status.divorced": "Išsiskyrę",
+  "relation.status.widowed": "Našlystė",
 
   // Actions
   "action.save": "Išsaugoti",
