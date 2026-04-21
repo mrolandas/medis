@@ -3,6 +3,7 @@
 
 -- Enable UUID generation
 create extension if not exists "uuid-ossp";
+create extension if not exists "pgcrypto";
 
 -- ============================================================
 -- TABLES
@@ -60,18 +61,87 @@ create index idx_parent_child_parent on parent_child(parent_id);
 create index idx_parent_child_child on parent_child(child_id);
 
 -- ============================================================
+-- APP-LEVEL AUTHORIZATION (header-based)
+-- ============================================================
+
+create table if not exists app_settings (
+  id boolean primary key default true,
+  app_password_hash text not null,
+  updated_at timestamptz not null default now(),
+  check (id = true)
+);
+
+insert into app_settings (id, app_password_hash)
+values (true, crypt('CHANGE_ME_STRONG_APP_PASSWORD', gen_salt('bf')))
+on conflict (id) do nothing;
+
+create or replace function medis_request_password()
+returns text
+language sql
+stable
+as $$
+  select coalesce(
+    (current_setting('request.headers', true)::json ->> 'x-medis-password'),
+    ''
+  );
+$$;
+
+create or replace function medis_is_authorized()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from app_settings s
+    where s.id = true
+      and s.app_password_hash = crypt(medis_request_password(), s.app_password_hash)
+  );
+$$;
+
+grant execute on function medis_request_password() to anon, authenticated;
+grant execute on function medis_is_authorized() to anon, authenticated;
+revoke all on app_settings from anon, authenticated;
+
+-- ============================================================
 -- ROW LEVEL SECURITY (RLS)
--- Allow full access with the anon key (simple family app, no auth needed)
+-- Require valid app password header for all operations.
 -- ============================================================
 
 alter table people enable row level security;
 alter table marriages enable row level security;
 alter table parent_child enable row level security;
+alter table app_settings enable row level security;
 
--- Policies: allow all operations for anonymous users
-create policy "Allow all on people" on people for all using (true) with check (true);
-create policy "Allow all on marriages" on marriages for all using (true) with check (true);
-create policy "Allow all on parent_child" on parent_child for all using (true) with check (true);
+drop policy if exists "Allow all on people" on people;
+drop policy if exists "Allow all on marriages" on marriages;
+drop policy if exists "Allow all on parent_child" on parent_child;
+
+drop policy if exists "App auth on people" on people;
+drop policy if exists "App auth on marriages" on marriages;
+drop policy if exists "App auth on parent_child" on parent_child;
+drop policy if exists "No direct app_settings read" on app_settings;
+
+create policy "App auth on people"
+  on people for all
+  using (medis_is_authorized())
+  with check (medis_is_authorized());
+
+create policy "App auth on marriages"
+  on marriages for all
+  using (medis_is_authorized())
+  with check (medis_is_authorized());
+
+create policy "App auth on parent_child"
+  on parent_child for all
+  using (medis_is_authorized())
+  with check (medis_is_authorized());
+
+create policy "No direct app_settings read"
+  on app_settings for select
+  using (false);
 
 -- ============================================================
 -- OPTIONAL: Sample data for testing

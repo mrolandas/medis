@@ -280,9 +280,22 @@ export function FamilyMembersModal({
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              minWidth: isMobile ? 0 : 1120,
+              tableLayout: isMobile ? "auto" : "fixed",
+              minWidth: isMobile ? 960 : 0,
             }}
           >
+            {!isMobile && (
+              <colgroup>
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "11%" }} />
+                <col style={{ width: "10%" }} />
+              </colgroup>
+            )}
             <thead>
               <tr style={{ background: "#f8f9fa" }}>
                 <th style={thStyle}>
@@ -348,7 +361,13 @@ export function FamilyMembersModal({
                     {sortIndicator("isDeceased")}
                   </button>
                 </th>
-                <th style={{ ...thStyle, textAlign: "right" }}>
+                <th
+                  style={{
+                    ...thStyle,
+                    ...stickyRightHeaderStyle,
+                    textAlign: "right",
+                  }}
+                >
                   {t("action.edit")}
                 </th>
               </tr>
@@ -361,13 +380,13 @@ export function FamilyMembersModal({
                 >
                   <td style={tdStyle}>{member.firstName || "-"}</td>
                   <td style={tdStyle}>{member.lastName || "-"}</td>
-                  <td style={tdStyle}>
+                  <td style={wrappedTdStyle}>
                     {formatList(member.spouseNames) || "-"}
                   </td>
-                  <td style={tdStyle}>
+                  <td style={wrappedTdStyle}>
                     {formatList(member.parentNames) || "-"}
                   </td>
-                  <td style={tdStyle}>
+                  <td style={wrappedTdStyle}>
                     {formatList(member.childNames) || "-"}
                   </td>
                   <td style={tdStyle}>
@@ -378,7 +397,13 @@ export function FamilyMembersModal({
                   >
                     {member.isDeceased ? "✓" : ""}
                   </td>
-                  <td style={{ ...tdStyle, textAlign: "right" }}>
+                  <td
+                    style={{
+                      ...tdStyle,
+                      ...stickyRightCellStyle,
+                      textAlign: "right",
+                    }}
+                  >
                     <button
                       onClick={() => onEditPerson(member.id)}
                       style={{
@@ -406,6 +431,11 @@ export function FamilyMembersModal({
 }
 
 const thStyle: CSSProperties = {
+  position: "sticky",
+  top: 0,
+  zIndex: 2,
+  background: "#f8f9fa",
+  whiteSpace: "nowrap",
   textAlign: "left",
   padding: "12px 14px",
   color: "#2d3436",
@@ -420,6 +450,7 @@ const thButtonStyle: CSSProperties = {
   color: "inherit",
   fontSize: "inherit",
   fontWeight: 700,
+  whiteSpace: "nowrap",
   cursor: "pointer",
 };
 
@@ -428,4 +459,24 @@ const tdStyle: CSSProperties = {
   fontSize: 14,
   color: "#2d3436",
   verticalAlign: "top",
+};
+
+const wrappedTdStyle: CSSProperties = {
+  ...tdStyle,
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
+};
+
+const stickyRightHeaderStyle: CSSProperties = {
+  position: "sticky",
+  right: 0,
+  zIndex: 3,
+  background: "#f8f9fa",
+};
+
+const stickyRightCellStyle: CSSProperties = {
+  position: "sticky",
+  right: 0,
+  zIndex: 1,
+  background: "#fff",
 };

@@ -4,10 +4,14 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
-import { supabase } from "../lib/supabase";
+import { getSupabaseClient } from "../lib/supabase";
 import type { Person, Marriage, ParentChild, PersonInput } from "../types";
+
+const SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000;
+const LAST_ACTIVE_KEY = "medis:lastActiveAt";
 
 interface TreeData {
   people: Person[];
@@ -42,6 +46,7 @@ export function useTreeData(): TreeData {
 }
 
 export function TreeDataProvider({ children }: { children: ReactNode }) {
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const [people, setPeople] = useState<Person[]>([]);
   const [marriages, setMarriages] = useState<Marriage[]>([]);
   const [parentChild, setParentChild] = useState<ParentChild[]>([]);
@@ -49,30 +54,107 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<TreeData["saveStatus"]>("idle");
 
+  const fetchAll = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const [pRes, mRes, pcRes] = await Promise.all([
+        supabase.from("people").select("*").order("created_at"),
+        supabase.from("marriages").select("*").order("order_index"),
+        supabase.from("parent_child").select("*"),
+      ]);
+      if (pRes.error) throw pRes.error;
+      if (mRes.error) throw mRes.error;
+      if (pcRes.error) throw pcRes.error;
+      setPeople(pRes.data ?? []);
+      setMarriages(mRes.data ?? []);
+      setParentChild(pcRes.data ?? []);
+      setError(null);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load data";
+      setError(msg);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
   // Fetch all data on mount
   useEffect(() => {
-    async function fetchAll() {
-      try {
-        const [pRes, mRes, pcRes] = await Promise.all([
-          supabase.from("people").select("*").order("created_at"),
-          supabase.from("marriages").select("*").order("order_index"),
-          supabase.from("parent_child").select("*"),
-        ]);
-        if (pRes.error) throw pRes.error;
-        if (mRes.error) throw mRes.error;
-        if (pcRes.error) throw pcRes.error;
-        setPeople(pRes.data ?? []);
-        setMarriages(mRes.data ?? []);
-        setParentChild(pcRes.data ?? []);
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Failed to load data";
-        setError(msg);
-      } finally {
-        setLoading(false);
+    void fetchAll(true);
+  }, [fetchAll]);
+
+  // Refresh local cache when records change elsewhere (other tabs/users).
+  useEffect(() => {
+    const channel = supabase
+      .channel("tree-data-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "people" },
+        () => void fetchAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "marriages" },
+        () => void fetchAll(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "parent_child" },
+        () => void fetchAll(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchAll]);
+
+  // Session staleness guard: after long inactivity, force a clean refresh.
+  useEffect(() => {
+    const writeActiveNow = () => {
+      sessionStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+    };
+
+    const shouldForceReload = () => {
+      const lastActiveRaw = sessionStorage.getItem(LAST_ACTIVE_KEY);
+      if (!lastActiveRaw) return false;
+      const lastActive = Number(lastActiveRaw);
+      return (
+        Number.isFinite(lastActive) &&
+        Date.now() - lastActive > SESSION_TIMEOUT_MS
+      );
+    };
+
+    const syncOnReturn = () => {
+      const stale = shouldForceReload();
+      writeActiveNow();
+      if (stale) {
+        window.location.reload();
+        return;
       }
-    }
-    fetchAll();
-  }, []);
+      void fetchAll();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncOnReturn();
+        return;
+      }
+      writeActiveNow();
+    };
+
+    const onFocus = () => {
+      syncOnReturn();
+    };
+
+    writeActiveNow();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [fetchAll]);
 
   const getPerson = useCallback(
     (id: string) => people.find((p) => p.id === id),
@@ -87,9 +169,10 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 1500);
       return result;
-    } catch {
+    } catch (e: unknown) {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
+      if (e instanceof Error) throw e;
       throw new Error("Save failed");
     }
   }, []);
@@ -112,23 +195,40 @@ export function TreeDataProvider({ children }: { children: ReactNode }) {
 
   const updatePerson = useCallback(
     async (id: string, updates: Partial<PersonInput>) => {
+      const currentPerson = people.find((person) => person.id === id);
+      if (!currentPerson) return;
+
+      const optimisticUpdatedAt = new Date().toISOString();
+
       // Optimistic update
       setPeople((prev) =>
         prev.map((p) =>
           p.id === id
-            ? { ...p, ...updates, updated_at: new Date().toISOString() }
+            ? { ...p, ...updates, updated_at: optimisticUpdatedAt }
             : p,
         ),
       );
+
       await withSave(async () => {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("people")
-          .update({ ...updates, updated_at: new Date().toISOString() })
-          .eq("id", id);
+          .update({ ...updates, updated_at: optimisticUpdatedAt })
+          .eq("id", id)
+          .eq("updated_at", currentPerson.updated_at)
+          .select()
+          .maybeSingle();
         if (error) throw error;
+        if (!data) {
+          await fetchAll();
+          throw new Error(
+            "This person was updated elsewhere. Data refreshed, please re-apply your change.",
+          );
+        }
+
+        setPeople((prev) => prev.map((p) => (p.id === id ? data : p)));
       });
     },
-    [withSave],
+    [withSave, people, fetchAll],
   );
 
   const deletePerson = useCallback(

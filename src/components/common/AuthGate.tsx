@@ -1,8 +1,11 @@
 import { useState, useCallback, type ReactNode } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { useTranslation } from "../../hooks/useTranslation";
+import { AUTH_PASSWORD_SESSION_KEY } from "../../lib/supabase";
 
 const SESSION_KEY = "medis_authenticated";
-const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 interface AuthGateProps {
   children: ReactNode;
@@ -16,19 +19,52 @@ export function AuthGate({ children }: AuthGateProps) {
   );
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const validatePassword = useCallback(async (candidate: string) => {
+    if (!SUPABASE_URL || !SUPABASE_KEY) return false;
+
+    const testClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      global: {
+        headers: {
+          "x-medis-password": candidate,
+        },
+      },
+    });
+
+    const { data, error: rpcError } = await testClient.rpc(
+      "medis_is_authorized",
+    );
+    if (rpcError) return false;
+    return data === true;
+  }, []);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      if (password === APP_PASSWORD) {
+      if (!password.trim()) {
+        setError(true);
+        return;
+      }
+
+      setSubmitting(true);
+      const isValid = await validatePassword(password);
+      setSubmitting(false);
+
+      if (isValid) {
         sessionStorage.setItem(SESSION_KEY, "true");
+        sessionStorage.setItem(AUTH_PASSWORD_SESSION_KEY, password);
         setAuthenticated(true);
         setError(false);
+        // Reload to ensure all data clients are re-created with auth headers.
+        window.location.reload();
       } else {
+        sessionStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem(AUTH_PASSWORD_SESSION_KEY);
         setError(true);
       }
     },
-    [password],
+    [password, validatePassword],
   );
 
   if (authenticated) {
@@ -95,16 +131,17 @@ export function AuthGate({ children }: AuthGateProps) {
 
         <button
           type="submit"
+          disabled={submitting}
           style={{
             width: "100%",
             padding: "12px 20px",
             fontSize: 17,
             fontWeight: 600,
-            background: "#4a7c59",
+            background: submitting ? "#95a5a6" : "#4a7c59",
             color: "#fff",
             border: "none",
             borderRadius: 10,
-            cursor: "pointer",
+            cursor: submitting ? "not-allowed" : "pointer",
             marginTop: 8,
           }}
         >
