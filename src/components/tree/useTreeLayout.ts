@@ -278,6 +278,18 @@ export function useTreeLayout(
           miniPositions.set(n.id, rawPos(n.left, n.top));
         }
 
+        // Some library edge-cases can return an empty mini tree; ensure every
+        // missing component still gets deterministic coordinates.
+        if (miniPositions.size === 0) {
+          const sortedComp = [...comp].sort(comparePersonIds);
+          for (let index = 0; index < sortedComp.length; index += 1) {
+            miniPositions.set(sortedComp[index], {
+              x: index * (NODE_WIDTH + GAP_X),
+              y: 0,
+            });
+          }
+        }
+
         // Find how this component attaches to already placed nodes
         let bridge: Bridge | null = null;
 
@@ -469,6 +481,8 @@ export function useTreeLayout(
       }
     }
 
+    const originalIndegree = new Map(indegree);
+
     const groupLevel = new Map<string, number>();
     for (const g of indegree.keys()) groupLevel.set(g, 0);
 
@@ -494,7 +508,7 @@ export function useTreeLayout(
     // (those with no incoming parent edges in the DAG) are exempt — they must
     // stay at level 0 regardless of how deep their in-law descendants are.
     const rootGroups = new Set<string>();
-    for (const [g, deg] of indegree) {
+    for (const [g, deg] of originalIndegree) {
       if (deg === 0) rootGroups.add(g);
     }
     for (let index = topoOrder.length - 1; index >= 0; index -= 1) {
@@ -505,6 +519,22 @@ export function useTreeLayout(
         desired = Math.max(desired, (groupLevel.get(ch) ?? 0) - 1);
       }
       groupLevel.set(g, desired);
+    }
+
+    // Final safety net: make sure every person has a visible position.
+    if (positions.size < sortedPeople.length) {
+      let fallbackX = 40 + NODE_WIDTH / 2;
+      let fallbackY = 40 + NODE_HEIGHT / 2;
+      for (const pos of positions.values()) {
+        fallbackX = Math.max(fallbackX, pos.x + NODE_WIDTH + GAP_X);
+        fallbackY = Math.max(fallbackY, pos.y);
+      }
+
+      for (const person of sortedPeople) {
+        if (positions.has(person.id)) continue;
+        positions.set(person.id, { x: fallbackX, y: fallbackY });
+        fallbackX += NODE_WIDTH + GAP_X;
+      }
     }
 
     const TOP_MARGIN = 40;

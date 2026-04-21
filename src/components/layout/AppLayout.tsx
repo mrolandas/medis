@@ -4,6 +4,7 @@ import { Header } from "./Header";
 import { TreeView } from "../tree/TreeView";
 import { PersonPanel } from "../person/PersonPanel";
 import { AddPersonModal } from "../common/AddPersonModal";
+import { FamilyMembersModal } from "../common/FamilyMembersModal";
 import { useTranslation } from "../../hooks/useTranslation";
 
 export function AppLayout() {
@@ -15,6 +16,7 @@ export function AppLayout() {
     null,
   );
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showFamilyMembersModal, setShowFamilyMembersModal] = useState(false);
 
   const selectedPerson = selectedPersonId
     ? getPerson(selectedPersonId)
@@ -120,6 +122,13 @@ export function AppLayout() {
     setSelectedPersonId(id);
   }, []);
 
+  const handleEditPersonFromFamilyMembers = useCallback((id: string) => {
+    setShowFamilyMembersModal(false);
+    setHighlightedPersonId(null);
+    setFocusedPersonId(id);
+    setSelectedPersonId(id);
+  }, []);
+
   if (error) {
     return (
       <div
@@ -175,6 +184,7 @@ export function AppLayout() {
     >
       <Header
         onAddPerson={() => setShowAddModal(true)}
+        onOpenFamilyMembers={() => setShowFamilyMembersModal(true)}
         onSelectPerson={handleSearchPerson}
       />
 
@@ -205,6 +215,13 @@ export function AppLayout() {
         <AddPersonModal
           onClose={() => setShowAddModal(false)}
           onPersonAdded={handlePersonAdded}
+        />
+      )}
+
+      {showFamilyMembersModal && (
+        <FamilyMembersModal
+          onClose={() => setShowFamilyMembersModal(false)}
+          onEditPerson={handleEditPersonFromFamilyMembers}
         />
       )}
     </div>

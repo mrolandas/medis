@@ -63,6 +63,7 @@ const lt = {
   "action.delete": "Ištrinti",
   "action.edit": "Redaguoti",
   "action.add": "Pridėti",
+  "action.familyMembers": "Šeimos nariai",
   "action.addPerson": "Pridėti asmenį",
   "action.addSpouse": "Pridėti sutuoktinį(-ę)",
   "action.addParent": "Pridėti tėvą / motiną",
@@ -95,6 +96,10 @@ const lt = {
   "empty.noSpouses": "Nėra sutuoktinių",
   "empty.noParents": "Tėvai nežinomi",
   "empty.noChildren": "Nėra vaikų",
+
+  // Family members modal
+  "familyMembers.title": "Visi šeimos nariai",
+  "familyMembers.none": "Nėra",
 
   // Date hints
   "date.hint": "Pvz.: 1850, 1850-03, 1850-03-15",

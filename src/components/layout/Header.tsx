@@ -6,10 +6,15 @@ import { SearchBar } from "../search/SearchBar";
 
 interface HeaderProps {
   onAddPerson: () => void;
+  onOpenFamilyMembers: () => void;
   onSelectPerson: (id: string) => void;
 }
 
-export function Header({ onAddPerson, onSelectPerson }: HeaderProps) {
+export function Header({
+  onAddPerson,
+  onOpenFamilyMembers,
+  onSelectPerson,
+}: HeaderProps) {
   const { t } = useTranslation();
   const { saveStatus } = useTreeData();
   const isMobile = useIsMobile();
@@ -78,6 +83,22 @@ export function Header({ onAddPerson, onSelectPerson }: HeaderProps) {
               title={t("search.placeholder")}
             >
               🔍
+            </button>
+            <button
+              onClick={onOpenFamilyMembers}
+              style={{
+                padding: "8px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                background: "#0984e3",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {t("action.familyMembers")}
             </button>
             <button
               onClick={onAddPerson}
@@ -162,6 +183,22 @@ export function Header({ onAddPerson, onSelectPerson }: HeaderProps) {
             {saveStatus === "error" && t("save.error")}
           </span>
         )}
+        <button
+          onClick={onOpenFamilyMembers}
+          style={{
+            padding: "10px 16px",
+            fontSize: 15,
+            fontWeight: 600,
+            background: "#0984e3",
+            color: "#fff",
+            border: "none",
+            borderRadius: 10,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t("action.familyMembers")}
+        </button>
         <button
           onClick={onAddPerson}
           style={{
